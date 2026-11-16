@@ -163,38 +163,38 @@ function DetailsTab(props: Props) {
           <Box className={classes.historySection}>
             <MessageHistory onSelect={handleMessageHistorySelect} selected={compareMessage} node={node} />
           </Box>
-
-          {/* Stats Section - Moved to end of value section */}
-          <Box className={classes.statsSection}>
-            <Box className={classes.statsGrid}>
-              <Box className={classes.statItem}>
-                <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
-                  Messages
-                </Typography>
-                <Typography variant="h6" className={classes.statValue}>
-                  {node.messages}
-                </Typography>
-              </Box>
-              <Box className={classes.statItem}>
-                <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
-                  Subtopics
-                </Typography>
-                <Typography variant="h6" className={classes.statValue}>
-                  {node.childTopicCount()}
-                </Typography>
-              </Box>
-              <Box className={classes.statItem}>
-                <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
-                  Total
-                </Typography>
-                <Typography variant="h6" className={classes.statValue}>
-                  {node.leafMessageCount()}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
         </Box>
       )}
+
+      {/* Stats Section - also shown for topics without a message of their own */}
+      <Box className={classes.statsSection}>
+        <Box className={classes.statsGrid}>
+          <Box className={classes.statItem}>
+            <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
+              Messages
+            </Typography>
+            <Typography variant="h6" className={classes.statValue}>
+              {node.messages}
+            </Typography>
+          </Box>
+          <Box className={classes.statItem}>
+            <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
+              Topics
+            </Typography>
+            <Typography variant="h6" className={classes.statValue}>
+              {node.childTopicCount()}
+            </Typography>
+          </Box>
+          <Box className={classes.statItem}>
+            <Typography variant="body2" color="textSecondary" className={classes.statLabel}>
+              Total
+            </Typography>
+            <Typography variant="h6" className={classes.statValue}>
+              {node.leafMessageCount()}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
       {/* AI Assistant - Always available when a node is selected */}
       {node && <AIAssistant node={node} connectionId={props.connectionId} />}

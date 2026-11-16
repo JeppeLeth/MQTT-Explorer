@@ -57,6 +57,10 @@ This packages the current working tree for the architecture of the Mac it runs o
 
 `yarn package mac` builds the release DMG instead: a single universal (arm64 + x64) app built from a clean clone of the last commit. It is signed with a Developer ID and notarized when the certificate and the `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` variables are available, see [macOS Notarization](#macos-notarization).
 
+### Branch builds
+
+Every pushed branch is built for macOS, Windows and Linux by [.github/workflows/branch-builds.yml](.github/workflows/branch-builds.yml) and published as a GitHub pre-release named after the branch, the commit and the build time, e.g. `4.5 alpha · feature/my-branch · 1a2b3c4 · 2026-11-16 11:20 UTC`. These builds are not versioned, they all use version `0.4.5-alpha.<timestamp>.g<commit>`. Locally the same packages are built with `yarn prepare-release && yarn package branch`.
+
 ### Browser Mode (Web Application)
 
 MQTT Explorer can also run as a web application served by a Node.js server:

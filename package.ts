@@ -98,8 +98,28 @@ async function executeBuild() {
     case 'mac-local':
       await buildWithOptions(macLocal, { platform: 'mac', package: process.argv[3] === 'dmg' ? 'dmg' : 'dir' })
       break
+    case 'branch':
+      await buildBranchPackages()
+      break
     default:
       await buildWithOptions({ ...mac, projectDir: '' }, { platform: 'mac', package: 'mas-dev' })
+  }
+}
+
+/**
+ * Downloadable packages for the platform this runs on, without store packages (snap, appx) and without publishing.
+ * Used by .github/workflows/branch-builds.yml, which uploads the files to a GitHub release itself.
+ */
+async function buildBranchPackages() {
+  const never: Partial<builder.CliOptions> = { publish: 'never' }
+  if (process.platform === 'darwin') {
+    await buildWithOptions({ ...mac, ...never }, { platform: 'mac', package: 'dmg' })
+  } else if (process.platform === 'win32') {
+    await buildWithOptions({ ...winNsis, ...never }, { platform: 'win', package: 'nsis' })
+    await buildWithOptions({ ...winPortable, ...never }, { platform: 'win', package: 'portable' })
+  } else {
+    await buildWithOptions({ ...linuxAppImage, ...never }, { platform: 'linux', package: 'AppImage' })
+    await buildWithOptions({ ...linuxDeb, ...never }, { platform: 'linux', package: 'deb' })
   }
 }
 
@@ -137,6 +157,11 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
   const packageJsonStr = fs.readFileSync(jsonLocation).toString()
 
   const packageJson = JSON.parse(fs.readFileSync(jsonLocation).toString())
+
+  // Builds that are not versioned (e.g. branch builds) pass their version in, it ends up in the file names and the app
+  if (process.env.BUILD_VERSION) {
+    setProperty(packageJson, 'version', process.env.BUILD_VERSION)
+  }
 
   // electron-builder resolves hook modules relative to the working directory and rejects paths outside of the
   // project directory (here build/clean), so point the hooks at the copies inside the project directory.

@@ -73,3 +73,6 @@ publish-test*.js
 verify-mobile-tree.js
 interactive-mobile-test.js
 long-wait-test.js
+
+# Written by package.ts during packaging
+buildOptions.json

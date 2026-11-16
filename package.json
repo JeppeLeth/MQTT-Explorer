@@ -40,6 +40,7 @@
     "build:server": "npx tsc && (cd app && npx webpack --config webpack.browser.config.mjs --mode production)",
     "prepare-release": "tsx scripts/prepare-release.ts",
     "package": "tsx package.ts",
+    "package:mac:local": "yarn build && tsx package.ts mac-local",
     "ui-test": "./scripts/uiTests.sh",
     "upload-video-artifacts": "./scripts/uploadVideoAsset.ts ui-test.mp4 ui-test.gif",
     "package-with-docker": "./scripts/package-with-docker.sh"
@@ -55,6 +56,14 @@
     "appId": "mqtt-explorer",
     "productName": "MQTT Explorer",
     "nodeGypRebuild": false,
+    "files": [
+      "dist/**/*",
+      "!dist/src/spec/**",
+      "!dist/scripts/**",
+      "app/build/**/*",
+      "buildOptions.json",
+      "package.json"
+    ],
     "mac": {
       "appId": "de.t7n.apps.mqtt-explorer",
       "category": "public.app-category.developer-tools",
@@ -62,7 +71,10 @@
       "gatekeeperAssess": false,
       "publish": [
         "github"
-      ]
+      ],
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "MQTT Explorer connects to MQTT brokers on your local network."
+      }
     },
     "linux": {
       "category": "Development",

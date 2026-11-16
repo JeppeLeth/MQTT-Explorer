@@ -78,6 +78,7 @@
     "cmnd",
     "parseable",
     "sonoff",
-    "tele"
+    "tele",
+    "codesigning"
   ]
 }

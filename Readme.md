@@ -41,6 +41,22 @@ yarn build
 yarn start
 ```
 
+Requires Node.js 24 or newer.
+
+### Build a native macOS app (Apple Silicon or Intel)
+
+To get a double-clickable `.app` for your own Mac, without signing certificates and without publishing anything:
+
+```bash
+yarn
+yarn package:mac:local        # .app only, written to build/mac-arm64 (build/mac on Intel)
+yarn package:mac:local dmg    # additionally create a .dmg
+```
+
+This packages the current working tree for the architecture of the Mac it runs on. Without a "Developer ID Application" certificate the app is signed ad-hoc, which is enough to run on Apple Silicon, but it is not notarized. A copy downloaded on another Mac has to be allowed once under _System Settings → Privacy & Security → Open Anyway_.
+
+`yarn package mac` builds the release DMG instead: a single universal (arm64 + x64) app built from a clean clone of the last commit. It is signed with a Developer ID and notarized when the certificate and the `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` variables are available, see [macOS Notarization](#macos-notarization).
+
 ### Browser Mode (Web Application)
 
 MQTT Explorer can also run as a web application served by a Node.js server:

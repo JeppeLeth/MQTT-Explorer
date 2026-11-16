@@ -1,7 +1,11 @@
 import * as builder from 'electron-builder'
 import * as fs from 'fs'
 import * as path from 'path'
+import { execFileSync } from 'child_process'
 import { setProperty } from 'dot-prop'
+
+// Only publish to GitHub releases when a token is available (CI). Local builds never publish.
+const publish = process.env.GH_TOKEN ? 'always' : 'never'
 
 const linuxAppImage: builder.CliOptions = {
   x64: true,
@@ -9,7 +13,7 @@ const linuxAppImage: builder.CliOptions = {
   armv7l: true,
   arm64: true,
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
 }
 
 const linuxSnap: builder.CliOptions = {
@@ -18,7 +22,7 @@ const linuxSnap: builder.CliOptions = {
   armv7l: false, // not supported to build on x64
   arm64: false, // not supported to build on x64
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
 }
 
 const linuxDeb: builder.CliOptions = {
@@ -27,7 +31,7 @@ const linuxDeb: builder.CliOptions = {
   armv7l: true,
   arm64: true,
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
 }
 
 const winPortable: builder.CliOptions = {
@@ -36,7 +40,7 @@ const winPortable: builder.CliOptions = {
   armv7l: false,
   arm64: false,
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
 }
 
 const winNsis: builder.CliOptions = {
@@ -45,7 +49,7 @@ const winNsis: builder.CliOptions = {
   armv7l: false,
   arm64: false,
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
 }
 
 const winAppx: builder.CliOptions = {
@@ -54,16 +58,22 @@ const winAppx: builder.CliOptions = {
   armv7l: false,
   arm64: false,
   projectDir: './build/clean',
-  publish: 'onTag',
+  publish: process.env.GH_TOKEN ? 'onTag' : 'never',
 }
 
+// A single universal (arm64 + x64) DMG, so nobody ends up running the Intel build under Rosetta on Apple Silicon
 const mac: builder.CliOptions = {
-  x64: true,
-  ia32: false,
-  armv7l: false,
-  arm64: true,
+  universal: true,
   projectDir: './build/clean',
-  publish: 'always',
+  publish,
+}
+
+// Quick native build of the current working tree for this Mac (run `yarn build` first), see Readme
+const macLocal: builder.CliOptions = {
+  arm64: process.arch === 'arm64',
+  x64: process.arch === 'x64',
+  projectDir: '.',
+  publish: 'never',
 }
 
 async function executeBuild() {
@@ -85,6 +95,9 @@ async function executeBuild() {
       // await buildWithOptions(mac, { platform: 'mac', package: 'mas' })
       // await buildWithOptions(mac, { platform: 'mac', package: 'zip' })
       break
+    case 'mac-local':
+      await buildWithOptions(macLocal, { platform: 'mac', package: process.argv[3] === 'dmg' ? 'dmg' : 'dir' })
+      break
     default:
       await buildWithOptions({ ...mac, projectDir: '' }, { platform: 'mac', package: 'mas-dev' })
   }
@@ -95,10 +108,30 @@ export interface BuildInfo {
   package: Packages
 }
 
-type Packages = 'portable' | 'nsis' | 'appx' | 'AppImage' | 'snap' | 'dmg' | 'zip' | 'mas' | 'mas-dev' | 'deb'
+type Packages = 'portable' | 'nsis' | 'appx' | 'AppImage' | 'snap' | 'dmg' | 'zip' | 'mas' | 'mas-dev' | 'deb' | 'dir'
+
+/**
+ * Whether a "Developer ID Application" certificate is available to electron-builder,
+ * either via CSC_LINK / CSC_NAME or in the keychain.
+ */
+function hasDeveloperIdCertificate(): boolean {
+  if (process.env.CSC_LINK || process.env.CSC_NAME) {
+    return true
+  }
+  if (process.env.CSC_IDENTITY_AUTO_DISCOVERY === 'false') {
+    return false
+  }
+  try {
+    const identities = execFileSync('security', ['find-identity', '-v', '-p', 'codesigning']).toString()
+    return identities.includes('Developer ID Application')
+  } catch {
+    return false
+  }
+}
 
 async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInfo) {
-  fs.writeFileSync(path.join(options.projectDir!, 'buildOptions.json'), JSON.stringify(buildInfo))
+  const buildOptionsLocation = path.join(options.projectDir!, 'buildOptions.json')
+  fs.writeFileSync(buildOptionsLocation, JSON.stringify(buildInfo))
 
   const jsonLocation = path.join(options.projectDir as string, 'package.json')
   const packageJsonStr = fs.readFileSync(jsonLocation).toString()
@@ -112,11 +145,21 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
 
   if (buildInfo.platform === 'mac') {
     console.log(buildInfo.package)
-    const provisioningProfile =
-      buildInfo.package === 'mas'
-        ? 'res/MQTT_Explorer_Store_Distribution_Profile.provisionprofile'
-        : 'res/MQTTExplorerdmg.provisionprofile'
-    setProperty(packageJson, 'build.mac.provisioningProfile', provisioningProfile)
+    const isAppStoreBuild = buildInfo.package === 'mas' || buildInfo.package === 'mas-dev'
+    if (isAppStoreBuild || hasDeveloperIdCertificate()) {
+      const provisioningProfile =
+        buildInfo.package === 'mas'
+          ? 'res/MQTT_Explorer_Store_Distribution_Profile.provisionprofile'
+          : 'res/MQTTExplorerdmg.provisionprofile'
+      setProperty(packageJson, 'build.mac.provisioningProfile', provisioningProfile)
+    } else {
+      // Without a certificate electron-builder would skip signing entirely. Apple Silicon refuses to launch
+      // unsigned code (the bundle shows up as "damaged"), so sign ad-hoc instead. Hardened runtime has to be
+      // off for ad-hoc builds, otherwise library validation rejects the pre-signed Electron framework.
+      console.warn('No "Developer ID Application" certificate found, signing ad-hoc (not notarized)')
+      setProperty(packageJson, 'build.mac.identity', '-')
+      setProperty(packageJson, 'build.mac.hardenedRuntime', false)
+    }
 
     // Set different entitlements for MAS vs DMG builds
     if (buildInfo.package === 'mas') {
@@ -138,21 +181,14 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
       ...options,
       [buildInfo.platform]: [buildInfo.package],
     })
-  } catch (error) {
-    throw error
   } finally {
     // Roll back changes to package.json
     fs.writeFileSync(jsonLocation, packageJsonStr)
+    fs.rmSync(buildOptionsLocation, { force: true })
   }
 }
 
-function build() {
-  try {
-    executeBuild()
-  } catch (error) {
-    console.error(error)
-    process.exit(1)
-  }
-}
-
-build()
+executeBuild().catch(error => {
+  console.error(error)
+  process.exit(1)
+})

@@ -10,11 +10,27 @@ import { AppState } from '../../reducers'
 import { usePollingToFetchTreeNode } from '../helper/usePollingToFetchTreeNode'
 import { useUpdateComponentWhenNodeUpdates } from '../helper/useUpdateComponentWhenNodeUpdates'
 
-const abbreviate = require('number-abbreviate')
-
 interface Stats {
   topic: string
   title: string
+  unit?: 'bytes'
+}
+
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+
+/** 14200000000 -> "14.2B" messages, 4100000000 bytes -> "4.1 GB" */
+export function formatStatistic(value: number, unit?: 'bytes'): string {
+  if (unit === 'bytes') {
+    const units = ['B', 'kB', 'MB', 'GB', 'TB']
+    let index = 0
+    let scaled = value
+    while (scaled >= 1000 && index < units.length - 1) {
+      scaled /= 1000
+      index += 1
+    }
+    return `${Number(scaled.toFixed(1))} ${units[index]}`
+  }
+  return compactNumber.format(value)
 }
 
 const styles = (theme: Theme) => ({
@@ -69,15 +85,17 @@ function BrokerStatistics(props: Props) {
       },
       sent5m: {
         topic: '$SYS/broker/load/messages/sent/5min',
-        title: 'Sent 5m',
+        title: 'Sent last 5min',
       },
       heap: {
         topic: '$SYS/broker/heap/current',
         title: 'Memory',
+        unit: 'bytes',
       },
       heapMax: {
         topic: '$SYS/broker/heap/maximum',
         title: 'Memory (max)',
+        unit: 'bytes',
       },
     }
 
@@ -124,8 +142,8 @@ function renderStat(tree: q.Tree<TopicViewModel>, stat: Stats) {
   }
 
   const str = node.message.payload ? node.message.payload.toUnicodeString() : ''
-  let value = node.message && node.message.payload ? parseFloat(str) : NaN
-  value = !isNaN(value) ? abbreviate(value) : str
+  const number = node.message && node.message.payload ? Number(str) : NaN
+  const value = !isNaN(number) && str.trim() !== '' ? formatStatistic(number, stat.unit) : str
 
   return (
     <div key={stat.title}>

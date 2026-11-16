@@ -59,7 +59,7 @@ This packages the current working tree for the architecture of the Mac it runs o
 
 ### Branch builds
 
-Every pushed branch is built for macOS, Windows and Linux by [.github/workflows/branch-builds.yml](.github/workflows/branch-builds.yml) and published as a GitHub pre-release named after the branch, the commit and the build time, e.g. `4.5 alpha · feature/my-branch · 1a2b3c4 · 2026-11-16 11:20 UTC`. These builds are not versioned, they all use version `0.4.5-alpha.<timestamp>.g<commit>`. Only the newest 3 builds of each branch are kept (`KEEP_RELEASES` in the workflow), older ones are deleted together with their tags. Locally the same packages are built with `yarn prepare-release && yarn package branch`.
+Every pushed branch is built for macOS, Windows and Linux by [.github/workflows/branch-builds.yml](.github/workflows/branch-builds.yml) and published as a GitHub pre-release named after the branch, the commit and the build time, e.g. `4.5 alpha · feature/my-branch · 1a2b3c4 · 2026-11-16 11:20 UTC`. These builds are not versioned, they all use version `0.4.5-alpha.<timestamp>.g<commit>`. Only the newest 3 builds of each branch are kept (`KEEP_RELEASES` in the workflow), older ones are deleted together with their tags, and so are the builds of deleted branches. Locally the same packages are built with `yarn prepare-release && yarn package branch`.
 
 ### Browser Mode (Web Application)
 

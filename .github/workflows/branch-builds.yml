@@ -1,7 +1,8 @@
 # Builds every pushed branch for macOS, Windows and Linux and publishes the packages as a GitHub
 # pre-release. Branch builds are not versioned, so every build is "4.5 alpha" (0.4.5-alpha.*) and the
 # release is named after the branch, the commit and the build time. Only the newest KEEP_RELEASES
-# builds of each branch are kept, older ones are deleted together with their tags.
+# builds of each branch are kept, older ones are deleted together with their tags, and the builds of
+# deleted branches are deleted as well (see the prune-deleted-branches job).
 #
 # macOS builds are signed ad-hoc (no Developer ID / notarization), see the release notes for how to open them.
 name: Branch builds
@@ -10,13 +11,16 @@ on:
   push:
     branches-ignore:
       - gh-pages
+  # GitHub only runs "delete" (and manual) workflows from the default branch, see prune-deleted-branches
+  delete:
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: branch-builds-${{ github.ref }}
+  # "delete" runs report the default branch as their ref, keep them from cancelling its builds
+  group: branch-builds-${{ github.event_name == 'delete' && 'deleted-branches' || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -26,6 +30,8 @@ env:
 
 jobs:
   meta:
+    # Nothing to build for a deleted branch, this also skips the build and release jobs
+    if: github.event_name != 'delete'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.meta.outputs.version }}
@@ -45,7 +51,7 @@ jobs:
           # Semver pre-release; the "g" keeps an all-digit hash from becoming a number with leading zeros
           echo "version=${ALPHA_VERSION}-alpha.${stamp}.g${short_sha}" >> "$GITHUB_OUTPUT"
           echo "slug=${slug}" >> "$GITHUB_OUTPUT"
-          # The prune step below relies on this format to find the builds of a branch
+          # The prune steps rely on this format to find the builds of a branch
           echo "tag=v${ALPHA_VERSION}-alpha-${slug}-${stamp}-${short_sha}" >> "$GITHUB_OUTPUT"
           echo "title=${ALPHA_VERSION#0.} alpha · ${BRANCH} · ${short_sha} · ${built}" >> "$GITHUB_OUTPUT"
           echo "built=${built}" >> "$GITHUB_OUTPUT"
@@ -113,7 +119,7 @@ jobs:
           - **Built:** ${BUILT} · [build log](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
           - **Version:** \`${VERSION}\`
 
-          Unversioned branch build ("${ALPHA_VERSION#0.} alpha"), not for production use. Only the newest ${KEEP_RELEASES} builds of a branch are kept.
+          Unversioned branch build ("${ALPHA_VERSION#0.} alpha"), not for production use. Only the newest ${KEEP_RELEASES} builds of a branch are kept, and they are deleted with the branch.
 
           | Platform | File |
           |---|---|
@@ -142,8 +148,8 @@ jobs:
           TAG: ${{ needs.meta.outputs.tag }}
           SLUG: ${{ needs.meta.outputs.slug }}
         run: |
-          # Tags of this branch's builds (see the meta job), the slug only contains [a-z0-9-]
-          export PATTERN="^v${ALPHA_VERSION//./[.]}-alpha-${SLUG}-[0-9]{12}-[0-9a-f]{7}$"
+          # Tags of this branch's builds of any alpha version (see the meta job), the slug only contains [a-z0-9-]
+          export PATTERN="^v[0-9]+[.][0-9]+[.][0-9]+-alpha-${SLUG}-[0-9]{12}-[0-9a-f]{7}$"
           # Newest first, without the release just created, which always stays
           older="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
               --jq '.[] | select((.tag_name | test($ENV.PATTERN)) and .tag_name != $ENV.TAG) | "\(.created_at) \(.tag_name)"' \
@@ -156,3 +162,37 @@ jobs:
             gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes \
               || echo "::warning::Could not delete the old build $tag"
           done
+
+  # Deletes the builds of branches that no longer exist. GitHub runs "delete" workflows only from the default
+  # branch, so while this workflow is not on the default branch, a deleted branch's builds are removed by the
+  # next push of any branch instead of right away.
+  prune-deleted-branches:
+    if: github.event_name != 'delete' || github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete builds of deleted branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          branches="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --jq '.[].name')"
+          # An incomplete branch list would delete the builds of existing branches
+          if ! grep -qxF "$DEFAULT_BRANCH" <<< "$branches"; then
+            echo "::error::The branch list does not contain the default branch ${DEFAULT_BRANCH}, not deleting anything"
+            exit 1
+          fi
+          # Same slug as in the meta job
+          slugs="$(tr '[:upper:]' '[:lower:]' <<< "$branches" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+          # "<slug> <tag>" for every branch build, of any alpha version
+          builds="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --jq '.[].tag_name' \
+            | sed -nE 's/^v[0-9]+\.[0-9]+\.[0-9]+-alpha-(.+)-[0-9]{12}-[0-9a-f]{7}$/\1 &/p')"
+          deleted=0
+          while read -r slug tag; do
+            [ -n "$tag" ] || continue
+            grep -qxF "$slug" <<< "$slugs" && continue
+            echo "Deleting $tag, its branch no longer exists"
+            deleted=$((deleted + 1))
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes \
+              || echo "::warning::Could not delete the build $tag of a deleted branch"
+          done <<< "$builds"
+          echo "Checked $(grep -c . <<< "$builds" || true) builds against $(grep -c . <<< "$branches") branches, deleted ${deleted}"

@@ -63,10 +63,8 @@ function HistoryDrawer(props: Props) {
         <div>
           <i>{element.title}</i>
         </div>
-        <div style={messageStyle}>
-          <span>
-            <pre>{element.value}</pre>
-          </span>
+        <div>
+          <pre style={messageStyle}>{element.value}</pre>
         </div>
       </div>
     ))

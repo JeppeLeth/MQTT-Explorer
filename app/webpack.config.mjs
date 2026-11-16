@@ -99,7 +99,8 @@ export default {
   cache: {
     type: 'filesystem',
     buildDependencies: {
-      config: [__filename],
+      // ts-loader output depends on tsconfig.json, invalidate the cache when it changes
+      config: [__filename, `${__dirname}/tsconfig.json`],
     },
   },
   performance: {

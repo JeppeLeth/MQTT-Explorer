@@ -29,8 +29,11 @@ export interface Props {
 
 function TreeNodeComponent(props: Props) {
   const { actions, classes, settings, theme, treeNode, lastUpdate, name } = props
-  const [collapsedOverride, setCollapsedOverride] = useState<boolean | undefined>(undefined)
-  const [selected, selectionLastUpdate, setSelected] = useSelectionState(false)
+  // Start from the state kept in the view model, so it survives remounting the tree (e.g. a layout switch)
+  const [collapsedOverride, setCollapsedOverride] = useState<boolean | undefined>(() =>
+    treeNode.viewModel?.isExpanded() ? false : undefined
+  )
+  const [selected, selectionLastUpdate, setSelected] = useSelectionState(Boolean(treeNode.viewModel?.isSelected()))
   const nodeRef = useRef<HTMLDivElement>()
   const isAllowedToAutoExpand = useIsAllowedToAutoExpandState(props)
   const deleteTopicCallback = useDeleteKeyCallback(treeNode, actions)

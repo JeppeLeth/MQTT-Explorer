@@ -3,7 +3,7 @@ import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon'
 
 /**
  * "01" glyph drawn on the standard 24x24 Material icon grid with the same 2px stroke weight and a
- * footprint matching the neighbouring Code / Reorder icons, so it sizes like any other MUI icon.
+ * footprint matching the neighboring Code / Reorder icons, so it sizes like any other MUI icon.
  */
 export function BinaryIcon(props: SvgIconProps) {
   return (

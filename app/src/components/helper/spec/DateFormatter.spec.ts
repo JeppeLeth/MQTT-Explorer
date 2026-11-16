@@ -1,8 +1,10 @@
 import 'mocha'
 import { expect } from 'chai'
 import moment from 'moment'
-import 'moment/locale/de'
 import { timeWithMillisecondsFormat } from '../DateFormatter'
+
+// Registers the German locale (side effect only, the module has no type declarations)
+require('moment/locale/de')
 
 describe('timeWithMillisecondsFormat', () => {
   const date = new Date(2026, 10, 16, 21, 52, 8, 681)

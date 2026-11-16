@@ -1,0 +1,128 @@
+# Builds every pushed branch for macOS, Windows and Linux and publishes the packages as a GitHub
+# pre-release. Branch builds are not versioned, so every build is "4.5 alpha" (0.4.5-alpha.*) and the
+# release is named after the branch, the commit and the build time.
+#
+# macOS builds are signed ad-hoc (no Developer ID / notarization), see the release notes for how to open them.
+name: Branch builds
+
+on:
+  push:
+    branches-ignore:
+      - gh-pages
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: branch-builds-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      title: ${{ steps.meta.outputs.title }}
+      built: ${{ steps.meta.outputs.built }}
+    steps:
+      - id: meta
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          stamp="$(date -u +%Y%m%d%H%M)"
+          built="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          slug="$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+          # Semver pre-release; the "g" keeps an all-digit hash from becoming a number with leading zeros
+          echo "version=0.4.5-alpha.${stamp}.g${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "tag=v0.4.5-alpha-${slug}-${stamp}-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "title=4.5 alpha · ${BRANCH} · ${short_sha} · ${built}" >> "$GITHUB_OUTPUT"
+          echo "built=${built}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: meta
+    name: build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install -g yarn
+      - run: yarn install --frozen-lockfile
+      # Builds the app from a clean clone of the commit in build/clean
+      - run: yarn prepare-release
+      - run: yarn package branch
+        env:
+          BUILD_VERSION: ${{ needs.meta.outputs.version }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.name }}
+          path: |
+            build/clean/build/*.dmg
+            build/clean/build/MQTT*.exe
+            build/clean/build/*.AppImage
+            build/clean/build/*.deb
+          if-no-files-found: error
+          retention-days: 3
+
+  release:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          path: packages
+          merge-multiple: true
+      - name: Create pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.meta.outputs.tag }}
+          TITLE: ${{ needs.meta.outputs.title }}
+          VERSION: ${{ needs.meta.outputs.version }}
+          BUILT: ${{ needs.meta.outputs.built }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          subject="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.message | split("\n")[0]')"
+          cat > notes.md <<EOF
+          - **Branch:** \`${BRANCH}\`
+          - **Commit:** [\`${GITHUB_SHA::7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) ${subject}
+          - **Built:** ${BUILT} · [build log](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+          - **Version:** \`${VERSION}\`
+
+          Unversioned branch build ("4.5 alpha"), not for production use.
+
+          | Platform | File |
+          |---|---|
+          | macOS (Apple Silicon and Intel) | \`*-universal.dmg\` |
+          | Windows | \`*Setup*.exe\` (installer) or the other \`.exe\` (portable) |
+          | Linux | \`.AppImage\` or \`.deb\` (x64, arm64, armv7l) |
+
+          **macOS:** the app is signed ad-hoc, not notarized. After copying it to Applications, open it once via
+          *System Settings → Privacy & Security → Open Anyway*, or run
+          \`xattr -dr com.apple.quarantine "/Applications/MQTT Explorer.app"\`.
+
+          **Windows:** the installer is not code signed, so SmartScreen asks for confirmation.
+          EOF
+          ls -la packages
+          gh release create "$TAG" packages/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes-file notes.md \
+            --prerelease \
+            --latest=false

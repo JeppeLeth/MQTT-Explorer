@@ -6,6 +6,7 @@ import { withStyles } from '@mui/styles'
 import { settingsActions } from '../../actions'
 import { AppState } from '../../reducers'
 import DateFormatter from '../helper/DateFormatter'
+import { resolveMomentLocale } from '../../utils/resolveMomentLocale'
 
 function importAll(r: any) {
   r.keys().forEach(r)
@@ -25,7 +26,8 @@ interface Props {
 
 function TimeLocaleSettings(props: Props) {
   const { classes, timeLocale, actions } = props
-  const locales = moment.locales()
+  const locales: Array<string> = moment.locales()
+  const selectedLocale = resolveMomentLocale(timeLocale, locales)
   const date = new Date()
   const localeMenuItems = locales.map((l: string) => (
     <MenuItem key={l} value={l}>
@@ -49,7 +51,7 @@ function TimeLocaleSettings(props: Props) {
         Time Locale
       </InputLabel>
       <Select
-        value={timeLocale}
+        value={selectedLocale}
         onChange={updateLocale}
         input={<Input name="time-locale" id="time-locale-label-placeholder" />}
         name="time-locale"
@@ -76,7 +78,6 @@ const mapDispatchToProps = (dispatch: any) => ({
 const styles = (theme: Theme) => ({
   input: {
     minWidth: '150px',
-    margin: `auto ${theme.spacing(1)} auto ${theme.spacing(2)}px`,
   },
   selected: {
     '& div': {

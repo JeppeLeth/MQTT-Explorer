@@ -78,7 +78,6 @@ const styles = (theme: Theme) => ({
   },
   input: {
     minWidth: '150px',
-    margin: `auto ${theme.spacing(1)} auto ${theme.spacing(2)}px`,
   },
   author: {
     margin: 'auto 8px 8px auto',

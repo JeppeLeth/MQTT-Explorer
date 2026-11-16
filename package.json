@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=24"
   },
-  "private": "true",
+  "private": true,
   "scripts": {
     "start": "electron .",
     "start:server": "npx tsc && node dist/src/server.js",

@@ -75,7 +75,7 @@ function AIAssistant(props: Props) {
     const nodePath = node?.path?.()
     if (expanded && node && nodePath && nodePath !== previousNodePathRef.current && llmService.hasApiKey()) {
       previousNodePathRef.current = nodePath
-      
+
       // Clear chat messages and error when switching to a new topic
       setMessages([])
       setError(null)
@@ -216,7 +216,11 @@ function AIAssistant(props: Props) {
     <Box className={classes.root}>
       {/* Header */}
       <Box className={classes.header}>
-        <Box className={classes.headerLeft} onClick={() => setExpanded(!expanded)} style={{ flex: 1, cursor: 'pointer' }}>
+        <Box
+          className={classes.headerLeft}
+          onClick={() => setExpanded(!expanded)}
+          style={{ flex: 1, cursor: 'pointer' }}
+        >
           <SmartToyIcon className={classes.icon} />
           <Typography variant="subtitle2" className={classes.title}>
             AI Assistant
@@ -227,7 +231,7 @@ function AIAssistant(props: Props) {
           {expanded && messages.length > 0 && (
             <IconButton
               size="small"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation()
                 setShowDebug(!showDebug)
               }}
@@ -237,7 +241,10 @@ function AIAssistant(props: Props) {
               <BugReportIcon fontSize="small" style={{ color: showDebug ? '#f50057' : 'inherit' }} />
             </IconButton>
           )}
-          <Box onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <Box
+            onClick={() => setExpanded(!expanded)}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </Box>
         </Box>
@@ -302,7 +309,7 @@ function AIAssistant(props: Props) {
                     {msg.proposals.map((proposal, pIdx) => (
                       <Card key={pIdx} className={classes.proposalCard} variant="outlined">
                         <CardContent className={classes.proposalContent}>
-                          <Typography variant="caption" color="primary" fontWeight="bold">
+                          <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
                             Proposed Action
                           </Typography>
                           <Typography variant="body2" gutterBottom>
@@ -379,7 +386,7 @@ function AIAssistant(props: Props) {
           {/* Debug View - Enhanced with API Traffic */}
           {showDebug && messages.length > 0 && (
             <Paper className={classes.debugContainer} variant="outlined">
-              <Typography variant="caption" fontWeight="bold" color="textSecondary" gutterBottom>
+              <Typography variant="caption" sx={{ fontWeight: 'bold' }} color="textSecondary" gutterBottom>
                 Debug: Complete API Traffic
               </Typography>
               <Box className={classes.debugContent}>
@@ -424,10 +431,7 @@ function AIAssistant(props: Props) {
                       summary: {
                         totalMessages: messages.length,
                         messagesWithDebugInfo: messages.filter(m => m.debugInfo).length,
-                        lastApiCall: messages
-                          .filter(m => m.debugInfo)
-                          .pop()
-                          ?.debugInfo?.timing?.timestamp,
+                        lastApiCall: messages.filter(m => m.debugInfo).pop()?.debugInfo?.timing?.timestamp,
                       },
                     },
                     null,

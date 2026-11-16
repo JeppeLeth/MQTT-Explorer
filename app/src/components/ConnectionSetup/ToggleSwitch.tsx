@@ -10,8 +10,10 @@ export function ToggleSwitch(props: { value: boolean; classes: any; toggle: () =
       color="primary"
       role="switch"
       aria-checked={value}
-      inputProps={{
-        'aria-label': label,
+      slotProps={{
+        input: {
+          'aria-label': label,
+        },
       }}
     />
   )

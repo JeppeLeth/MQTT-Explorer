@@ -1,7 +1,7 @@
 import * as builder from 'electron-builder'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as dotProp from 'dot-prop'
+import { setProperty } from 'dot-prop'
 
 const linuxAppImage: builder.CliOptions = {
   x64: true,
@@ -107,7 +107,7 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
 
   // AppX must have a different name since the store name is already taken (but not used)
   if (buildInfo.package === 'appx') {
-    dotProp.set(packageJson, 'build.productName', 'MQTT-Explorer')
+    setProperty(packageJson, 'build.productName', 'MQTT-Explorer')
   }
 
   if (buildInfo.platform === 'mac') {
@@ -116,18 +116,18 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
       buildInfo.package === 'mas'
         ? 'res/MQTT_Explorer_Store_Distribution_Profile.provisionprofile'
         : 'res/MQTTExplorerdmg.provisionprofile'
-    dotProp.set(packageJson, 'build.mac.provisioningProfile', provisioningProfile)
+    setProperty(packageJson, 'build.mac.provisioningProfile', provisioningProfile)
 
     // Set different entitlements for MAS vs DMG builds
     if (buildInfo.package === 'mas') {
       // MAS builds use the same sandboxed entitlements for parent and child processes
-      dotProp.set(packageJson, 'build.mac.entitlements', 'res/entitlements.mas.plist')
-      dotProp.set(packageJson, 'build.mac.entitlementsInherit', 'res/entitlements.mas.plist')
+      setProperty(packageJson, 'build.mac.entitlements', 'res/entitlements.mas.plist')
+      setProperty(packageJson, 'build.mac.entitlementsInherit', 'res/entitlements.mas.plist')
     } else {
       // DMG builds use different entitlements for notarization
       // Parent app has network permissions, child processes have minimal permissions
-      dotProp.set(packageJson, 'build.mac.entitlements', 'res/entitlements.mac.plist')
-      dotProp.set(packageJson, 'build.mac.entitlementsInherit', 'res/entitlements.mac.inherit.plist')
+      setProperty(packageJson, 'build.mac.entitlements', 'res/entitlements.mac.plist')
+      setProperty(packageJson, 'build.mac.entitlementsInherit', 'res/entitlements.mac.inherit.plist')
     }
   }
 

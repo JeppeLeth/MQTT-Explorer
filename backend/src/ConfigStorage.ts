@@ -1,28 +1,47 @@
-import FileAsync from 'lowdb/adapters/FileAsync'
 import fs from 'fs-extra'
-import lowdb from 'lowdb'
 import path from 'path'
+import { Low } from 'lowdb'
+import { JSONFile } from 'lowdb/node'
 import { Rpc } from '../../events/EventSystem/Rpc'
 import { storageClearEvent, storageLoadEvent, storageStoreEvent } from '../../events/StorageEvents'
 
+type StorageData = Record<string, unknown>
+
+/**
+ * Persists renderer state (settings, connections, chart layout) as a JSON file.
+ *
+ * The on-disk format is a flat JSON object keyed by store id, identical to what lowdb@1 wrote,
+ * so settings files from older versions keep working.
+ */
 export default class ConfigStorage {
   private file: string
-  private database: any
+
   private rpc: Rpc
+
+  private database?: Promise<Low<StorageData>>
 
   constructor(file: string, rpc: Rpc) {
     this.file = file
     this.rpc = rpc
   }
 
-  private async getDb() {
-    const pathInfo = path.parse(this.file)
-
-    // Ensure that Settings dir exists
-    await fs.mkdirp(pathInfo.dir)
-    const adapter = new FileAsync(this.file)
+  private getDb(): Promise<Low<StorageData>> {
+    // Memoize the promise so concurrent first requests share a single database instance
     if (!this.database) {
-      this.database = await lowdb(adapter)
+      this.database = (async () => {
+        // Ensure that Settings dir exists
+        await fs.mkdirp(path.dirname(this.file))
+        const db = new Low<StorageData>(new JSONFile<StorageData>(this.file), {})
+        await db.read()
+        if (!db.data || typeof db.data !== 'object') {
+          db.data = {}
+        }
+        return db
+      })()
+      this.database.catch(() => {
+        // Allow a retry on the next request, e.g. after a corrupt file has been fixed
+        this.database = undefined
+      })
     }
 
     return this.database
@@ -31,25 +50,22 @@ export default class ConfigStorage {
   public async init() {
     this.rpc.on(storageStoreEvent, async event => {
       const db = await this.getDb()
-      await db.set(event.store, event.data).write()
-      return
+      db.data[event.store] = event.data
+      await db.write()
     })
 
     this.rpc.on(storageLoadEvent, async event => {
       const db = await this.getDb()
-      const data = await db.get(event.store).value()
       return {
-        data,
+        data: db.data[event.store],
         store: event.store,
       }
     })
 
-    this.rpc.on(storageClearEvent, async event => {
+    this.rpc.on(storageClearEvent, async () => {
       const db = await this.getDb()
-      const keys = await db.keys().value()
-      for (const key of keys) {
-        await db.unset(key).write()
-      }
+      db.data = {}
+      await db.write()
     })
   }
 }

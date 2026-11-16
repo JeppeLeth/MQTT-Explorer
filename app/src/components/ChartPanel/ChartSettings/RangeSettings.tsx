@@ -59,8 +59,10 @@ function RangeSettings(props: Props) {
         <div style={{ padding: '0 16px', width: '275px' }}>
           <Typography>Define custom ranges for the Y-Axis</Typography>
           <TextField
-            inputProps={{
-              ref: rangeFromRef,
+            slotProps={{
+              htmlInput: {
+                ref: rangeFromRef,
+              },
             }}
             autoFocus
             style={{ marginTop: '0' }}
@@ -70,8 +72,10 @@ function RangeSettings(props: Props) {
             margin="normal"
           />
           <TextField
-            inputProps={{
-              ref: rangeToRef,
+            slotProps={{
+              htmlInput: {
+                ref: rangeToRef,
+              },
             }}
             style={{ marginLeft: '8px', marginTop: '0' }}
             onClick={dismissClick}

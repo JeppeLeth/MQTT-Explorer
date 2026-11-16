@@ -5,16 +5,21 @@
     "strictNullChecks": true,
     "outDir": "./dist",
     "strict": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "sourceRoot": "src/",
     "target": "ES2020",
-    "lib": ["ES2020", "dom"],
+    "lib": [
+      "ES2020",
+      "dom"
+    ],
     "sourceMap": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "downlevelIteration": true
+    "rootDir": "."
   },
   "include": [
     "src/electron.ts",
@@ -32,5 +37,7 @@
     "src/spec/SceneBuilder.spec.ts",
     "scripts/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

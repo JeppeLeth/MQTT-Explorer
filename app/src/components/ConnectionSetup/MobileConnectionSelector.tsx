@@ -70,9 +70,11 @@ class MobileConnectionSelector extends React.PureComponent<Props, {}> {
           aria-label="Select MQTT connection"
           displayEmpty
           MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: '60vh',
+            slotProps: {
+              paper: {
+                style: {
+                  maxHeight: '60vh',
+                },
               },
             },
           }}

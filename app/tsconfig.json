@@ -4,26 +4,35 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strict": true,
-    "lib": ["ES2020", "dom"],
-    "moduleResolution": "node",
+    "lib": [
+      "ES2020",
+      "dom"
+    ],
+    "moduleResolution": "bundler",
     "outDir": "./build/",
     "sourceMap": true,
     "module": "esnext",
     "target": "ES2020",
     "jsx": "react-jsx",
     "paths": {
-      "react": ["./node_modules/@types/react"]
+      "react": [
+        "./node_modules/@types/react"
+      ]
     },
-    "types": ["react"],
+    "types": [
+      "react"
+    ],
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "rootDir": ".."
   },
-  "include": ["./src/**/*"],
-  "exclude": ["**/*.d.ts", ".src/**/*.png", "./node_modules"],
-  "awesomeTypescriptLoaderOptions": {
-    "useCache": true,
-    "transpileModule": true,
-    "errorsAsWarnings": true
-  }
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "**/*.d.ts",
+    ".src/**/*.png",
+    "./node_modules"
+  ]
 }

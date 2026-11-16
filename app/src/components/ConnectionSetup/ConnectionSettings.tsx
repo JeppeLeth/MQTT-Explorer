@@ -72,7 +72,7 @@ function ConnectionSettings(props: Props) {
 
   function renderBasePathInput() {
     return (
-      <Grid item xs={4}>
+      <Grid size={4}>
         <TextField
           label="Basepath"
           className={props.classes.textField}
@@ -118,8 +118,10 @@ function ConnectionSettings(props: Props) {
           value={connection.protocol}
           onChange={updateProtocol}
           margin="dense"
-          inputProps={{
-            'aria-label': 'MQTT protocol',
+          slotProps={{
+            htmlInput: {
+              'aria-label': 'MQTT protocol',
+            },
           }}
         >
           {protocolItems}
@@ -172,7 +174,7 @@ function ConnectionSettings(props: Props) {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <form className={classes.container} noValidate autoComplete="off" style={{ flex: 1, overflow: 'auto' }}>
         <Grid container spacing={2}>
-          <Grid item xs={5}>
+          <Grid size={5}>
             <TextField
               autoFocus
               label="Name"
@@ -181,12 +183,14 @@ function ConnectionSettings(props: Props) {
               onChange={handleChange('name')}
               margin="dense"
               placeholder="My MQTT Connection"
-              inputProps={{
-                'aria-label': 'Connection name',
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'Connection name',
+                },
               }}
             />
           </Grid>
-          <Grid item xs={4}>
+          <Grid size={4}>
             <ToggleSwitch
               label="Validate certificate"
               classes={classes}
@@ -194,13 +198,11 @@ function ConnectionSettings(props: Props) {
               toggle={toggleCertValidation}
             />
           </Grid>
-          <Grid item xs={3}>
+          <Grid size={3}>
             <ToggleSwitch label="Encryption (tls)" classes={classes} value={connection.encryption} toggle={toggleTls} />
           </Grid>
-          <Grid item xs={2}>
-            {renderProtocols()}
-          </Grid>
-          <Grid item xs={7}>
+          <Grid size={2}>{renderProtocols()}</Grid>
+          <Grid size={7}>
             <TextField
               label="Host"
               className={classes.textField}
@@ -208,13 +210,15 @@ function ConnectionSettings(props: Props) {
               onChange={handleChange('host')}
               margin="dense"
               placeholder="broker.example.com"
-              inputProps={{
-                'data-testid': 'host-input',
-                'aria-label': 'MQTT broker host',
+              slotProps={{
+                htmlInput: {
+                  'data-testid': 'host-input',
+                  'aria-label': 'MQTT broker host',
+                },
               }}
             />
           </Grid>
-          <Grid item xs={3}>
+          <Grid size={3}>
             <TextField
               label="Port"
               className={classes.textField}
@@ -223,15 +227,17 @@ function ConnectionSettings(props: Props) {
               margin="dense"
               type="number"
               placeholder="1883"
-              inputProps={{
-                'aria-label': 'MQTT broker port',
-                min: 1,
-                max: 65535,
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'MQTT broker port',
+                  min: 1,
+                  max: 65535,
+                },
               }}
             />
           </Grid>
           {requiresBasePath() ? renderBasePathInput() : null}
-          <Grid item xs={requiresBasePath() ? 4 : 6}>
+          <Grid size={requiresBasePath() ? 4 : 6}>
             <TextField
               label="Username"
               className={classes.textField}
@@ -239,13 +245,15 @@ function ConnectionSettings(props: Props) {
               onChange={handleChange('username')}
               margin="dense"
               placeholder="Optional"
-              inputProps={{
-                'aria-label': 'MQTT username',
-                autoComplete: 'username',
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'MQTT username',
+                  autoComplete: 'username',
+                },
               }}
             />
           </Grid>
-          <Grid item xs={requiresBasePath() ? 4 : 6}>
+          <Grid size={requiresBasePath() ? 4 : 6}>
             <TextField
               label="Password"
               className={classes.textField}
@@ -254,12 +262,16 @@ function ConnectionSettings(props: Props) {
               onChange={handleChange('password')}
               margin="dense"
               placeholder="Optional"
-              InputProps={{
-                endAdornment: <PasswordVisibilityButton showPassword={showPassword} toggle={handleClickShowPassword} />,
-              }}
-              inputProps={{
-                'aria-label': 'MQTT password',
-                autoComplete: 'current-password',
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <PasswordVisibilityButton showPassword={showPassword} toggle={handleClickShowPassword} />
+                  ),
+                },
+                htmlInput: {
+                  'aria-label': 'MQTT password',
+                  autoComplete: 'current-password',
+                },
               }}
             />
           </Grid>

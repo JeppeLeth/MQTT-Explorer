@@ -18,7 +18,21 @@ import { configureStore } from '@reduxjs/toolkit'
 import 'jsdom-global/register'
 
 // Setup global mocks
+exposeMissingJsdomGlobals()
 mockResizeObserver()
+
+/**
+ * jsdom-global only copies a fixed (old) list of window properties onto `global`.
+ * Newer libraries (e.g. MUI's FocusTrap) reference globals that are missing from that list.
+ */
+function exposeMissingJsdomGlobals() {
+  const keys = ['ShadowRoot'] as const
+  for (const key of keys) {
+    if (typeof (global as any)[key] === 'undefined' && typeof window !== 'undefined') {
+      ;(global as any)[key] = (window as any)[key]
+    }
+  }
+}
 
 /**
  * Helper to create a ResizeObserver mock

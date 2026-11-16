@@ -3,9 +3,8 @@ import { bindActionCreators } from 'redux'
 import { Button, Menu, TextField, Typography } from '@mui/material'
 import { connect } from 'react-redux'
 import { chartActions } from '../../../actions'
+import parseDuration from 'parse-duration'
 import { ChartParameters } from '../../../reducers/Charts'
-
-const parseDuration = require('parse-duration')
 
 interface Props {
   actions: { chart: typeof chartActions }

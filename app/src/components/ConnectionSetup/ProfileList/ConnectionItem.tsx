@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { connect } from 'react-redux'
-import { ListItem, Typography } from '@mui/material'
+import { ListItemButton, Typography } from '@mui/material'
 import { withStyles } from '@mui/styles'
 import { Theme } from '@mui/material/styles'
 import { bindActionCreators } from 'redux'
@@ -27,8 +27,7 @@ function ConnectionItem(props: Props) {
 
   const connection = props.connection.host && toMqttConnection(props.connection)
   return (
-    <ListItem
-      button
+    <ListItemButton
       selected={props.selected}
       style={{ display: 'block' }}
       onClick={() => props.actions.connectionManager.selectConnection(props.connection.id)}
@@ -39,7 +38,7 @@ function ConnectionItem(props: Props) {
     >
       <Typography className={props.classes.name}>{props.connection.name || 'mqtt broker'}</Typography>
       <Typography className={props.classes.details}>{connection && connection.url}</Typography>
-    </ListItem>
+    </ListItemButton>
   )
 }
 

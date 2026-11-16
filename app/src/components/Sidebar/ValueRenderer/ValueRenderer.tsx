@@ -74,6 +74,8 @@ function renderRawMode(
   )
 }
 
+const HEX_BYTES_PER_LINE = 8
+
 export const ValueRenderer: React.FC<Props> = ({ treeNode, compareWith: compare, message, renderMode }) => {
   const decodeMessage = useDecoder(treeNode)
   const decodedMessage = useMemo(() => decodeMessage(message), [decodeMessage, message])
@@ -91,13 +93,17 @@ export const ValueRenderer: React.FC<Props> = ({ treeNode, compareWith: compare,
     () => decodeMessage(compareMessage)?.message?.format(treeNode.type) ?? [],
     [compareMessage, decodeMessage, treeNode.type]
   )
-  const currentHex = useMemo(() => (message.payload ? Base64Message.toHex(message.payload, 16) : ''), [message])
+  // 8 bytes per line fit the details panel at its default width (copy uses 16, see ValuePanel)
+  const currentHex = useMemo(
+    () => (message.payload ? Base64Message.toHex(message.payload, HEX_BYTES_PER_LINE) : ''),
+    [message]
+  )
   const compareHex = useMemo(() => {
-    if (!compareMessage || compareMessage === message || !compareMessage.payload) {
+    if (!compare || compare === message || !compare.payload) {
       return ''
     }
-    return Base64Message.toHex(compareMessage.payload, 16)
-  }, [compareMessage, message])
+    return Base64Message.toHex(compare.payload, HEX_BYTES_PER_LINE)
+  }, [compare, message])
 
   function renderValue(
     treeNode: q.TreeNode<TopicViewModel>,
@@ -118,7 +124,15 @@ export const ValueRenderer: React.FC<Props> = ({ treeNode, compareWith: compare,
       case 'hex':
         return renderRawMode(treeNode, currentHex, compareHex, undefined, undefined, compareWithPreviousMessage)
       default:
-        return renderRawMode(treeNode, currentStr, compareStr, currentType, compareType, compareWithPreviousMessage)
+        // Raw mode only shows a second value when a message was selected in the history
+        return renderRawMode(
+          treeNode,
+          currentStr,
+          compare ? compareStr : undefined,
+          currentType,
+          compareType,
+          compareWithPreviousMessage
+        )
     }
   }
 

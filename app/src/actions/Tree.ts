@@ -62,7 +62,6 @@ function destroyUnreferencedTree(state: AppState) {
 
   // Stop updates of old tree
   if (visibleTree && visibleTree !== connectionTree) {
-    console.warn('destroy')
     visibleTree.stopUpdating()
     visibleTree.destroy()
   }

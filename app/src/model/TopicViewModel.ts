@@ -71,7 +71,6 @@ export class TopicViewModel implements Destroyable {
   }
 
   public destroy() {
-    console.log('destroy', this.referenceCounter)
     if (this.owner) {
       this.owner.viewModel = undefined
       this.owner = undefined

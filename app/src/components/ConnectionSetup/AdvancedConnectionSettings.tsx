@@ -64,7 +64,8 @@ const ConnectionSettings = memo((props: Props) => {
             <Button
               className={classes.button}
               color="secondary"
-              onClick={() => props.managerActions.addSubscription({ topic, qos }, props.connection.id)}
+              onClick={() => props.managerActions.addSubscription({ topic: topic.trim(), qos }, props.connection.id)}
+              disabled={!topic.trim()}
               variant="contained"
               data-testid="add-subscription-button"
             >

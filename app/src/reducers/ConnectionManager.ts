@@ -140,13 +140,14 @@ function addConnection(state: ConnectionManagerState, action: AddConnection): Co
 
 function addSubscription(state: ConnectionManagerState, action: AddSubscription): ConnectionManagerState {
   const connection = state.connections[action.connectionId]
-  const alreadyExists = connection.subscriptions.indexOf(action.subscription) !== -1
-  if (alreadyExists) {
+  const topic = action.subscription.topic.trim()
+  const alreadyExists = connection.subscriptions.some(subscription => subscription.topic === topic)
+  if (!topic || alreadyExists) {
     return state
   }
 
   const newSubscriptions = connection.subscriptions.slice()
-  newSubscriptions.push(action.subscription)
+  newSubscriptions.push({ ...action.subscription, topic })
   return {
     ...state,
     connections: {

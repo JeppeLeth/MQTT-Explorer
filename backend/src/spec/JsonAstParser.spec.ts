@@ -28,6 +28,16 @@ describe('access JSON values via dot property paths', () => {
     expect(getProperty(data, result[0].path)).to.eq(4)
   })
 
+  it('escapes every dot in property names', () => {
+    const data = {
+      'sensor.kitchen.temperature': 21,
+    }
+
+    const result = parseJson(JSON.stringify(data, undefined, 2))
+    expect(result[0].path).to.eq('sensor\\.kitchen\\.temperature')
+    expect(getProperty(data, result[0].path)).to.eq(21)
+  })
+
   it('array path', () => {
     const data = {
       foo: [1, 2, 3],

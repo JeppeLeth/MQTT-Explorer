@@ -19,18 +19,38 @@ interface Props {
 
 /** Panes dragged smaller than this snap closed */
 const COLLAPSE_THRESHOLD_PX = 30
-/** Height of the chart panel when it opens automatically */
+/** The chart panel opens with this height, but never takes more than this share of the window */
 const DEFAULT_CHART_PANEL_HEIGHT_PX = 250
+const MAX_DEFAULT_CHART_PANEL_SHARE = 0.4
+const TITLE_BAR_HEIGHT_PX = 64
+
+/**
+ * Pane sizes are kept as a share of the available space (not in px), so that resizing the window scales all panes
+ * instead of squeezing the tree and pushing a wide sidebar out of the window.
+ */
+function shareOf(sizes: Array<number>, index: number): number {
+  const total = sizes.reduce((a, b) => a + b, 0)
+  return total > 0 ? (sizes[index] ?? 0) / total : 0
+}
+
+function toPercent(share: number): string {
+  return `${(share * 100).toFixed(3)}%`
+}
+
+function defaultChartPanelShare(): number {
+  const available = Math.max(window.innerHeight - TITLE_BAR_HEIGHT_PX, 1)
+  return Math.min(DEFAULT_CHART_PANEL_HEIGHT_PX / available, MAX_DEFAULT_CHART_PANEL_SHARE)
+}
 
 function ContentView(props: Props) {
   // Use different defaults for mobile viewports (<=768px width)
   // Use state for mobile detection that updates on resize
   const [isMobile, setIsMobile] = React.useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   const [mobileTab, setMobileTab] = React.useState(0) // 0 = topics, 1 = details, 2 = publish, 3 = charts
-  // Height of the chart panel below the tree, in px
-  const [chartPanelHeight, setChartPanelHeight] = React.useState(0)
-  // Width of the sidebar, a percentage string until the user resizes it, then px
-  const [sidebarWidth, setSidebarWidth] = React.useState<string | number>('40%')
+  // Share of the height used by the chart panel below the tree (0 = closed)
+  const [chartPanelShare, setChartPanelShare] = React.useState(0)
+  // Share of the width used by the sidebar
+  const [sidebarShare, setSidebarShare] = React.useState(0.4)
 
   // Update mobile state on resize
   React.useEffect(() => {
@@ -46,31 +66,31 @@ function ContentView(props: Props) {
   }, [])
 
   const onSidebarResize = React.useCallback((sizes: Array<number>) => {
-    setSidebarWidth(sizes[1] ?? 0)
+    setSidebarShare(shareOf(sizes, 1))
   }, [])
 
   const closeSidebarCompletelyIfItSitsOnTheEdge = React.useCallback((sizes: Array<number>) => {
     if ((sizes[1] ?? 0) < COLLAPSE_THRESHOLD_PX) {
-      setSidebarWidth(0)
+      setSidebarShare(0)
     }
   }, [])
 
   const onChartPanelResize = React.useCallback((sizes: Array<number>) => {
-    setChartPanelHeight(sizes[1] ?? 0)
+    setChartPanelShare(shareOf(sizes, 1))
   }, [])
 
   const closeChartPanelCompletelyIfItSitsOnTheEdge = React.useCallback((sizes: Array<number>) => {
     if ((sizes[1] ?? 0) < COLLAPSE_THRESHOLD_PX) {
-      setChartPanelHeight(0)
+      setChartPanelShare(0)
     }
   }, [])
 
   // Open chart panel on start and when a new chart is added but the panel is closed
   React.useEffect(() => {
     if (props.chartPanelItems.count() === 0) {
-      setChartPanelHeight(0)
+      setChartPanelShare(0)
     } else {
-      setChartPanelHeight(current => (current < COLLAPSE_THRESHOLD_PX ? DEFAULT_CHART_PANEL_HEIGHT_PX : current))
+      setChartPanelShare(current => (current === 0 ? defaultChartPanelShare() : current))
     }
   }, [props.chartPanelItems])
 
@@ -208,7 +228,10 @@ function ContentView(props: Props) {
             <Pane style={{ maxHeight: '100%', overflow: 'hidden' }}>
               <Tree />
             </Pane>
-            <Pane size={chartPanelHeight} style={{ borderTop: '1px solid #999', display: 'flex', overflow: 'hidden' }}>
+            <Pane
+              size={toPercent(chartPanelShare)}
+              style={{ borderTop: '1px solid #999', display: 'flex', overflow: 'hidden' }}
+            >
               {/** Passing height constraints via flex options down */}
               <div
                 style={{
@@ -223,7 +246,7 @@ function ContentView(props: Props) {
             </Pane>
           </SplitPane>
         </Pane>
-        <Pane size={sidebarWidth} style={{ height: '100%', overflow: 'hidden' }}>
+        <Pane size={toPercent(sidebarShare)} style={{ height: '100%', overflow: 'hidden' }}>
           <div
             className={props.paneDefaults}
             style={{

@@ -10,6 +10,13 @@ import { globalActions } from '.'
 import { showError } from './Global'
 import { showTree } from './Tree'
 import { TopicViewModel } from '../model/TopicViewModel'
+import { rendererEvents, setMaxMessageSize as setMaxMessageSizeEvent } from '../eventBus'
+import {
+  MAX_MESSAGE_SIZE_DEFAULT,
+  MAX_MESSAGE_SIZE_UNLIMITED,
+  isValidMaxMessageSize,
+  messageHistoryCapacityFor,
+} from '../../../events/MessageSizeLimit'
 
 const settingsIdentifier: StorageIdentifier<Partial<SettingsStateModel>> = {
   id: 'Settings',
@@ -25,15 +32,38 @@ export const loadSettings = () => async (dispatch: Dispatch<any>, getState: () =
   } catch (error) {
     dispatch(showError(error))
   }
+  applyMaxMessageSize(getState().settings.get('maxMessageSize'))
   dispatch(globalActions.didLaunch())
 }
 
+/** Tells the backend how much of each payload to forward and sizes the per-topic history accordingly */
+export function applyMaxMessageSize(maxMessageSize: number) {
+  const size = isValidMaxMessageSize(maxMessageSize) ? maxMessageSize : MAX_MESSAGE_SIZE_DEFAULT
+  q.TreeNode.messageHistoryCapacity = messageHistoryCapacityFor(size)
+  rendererEvents.emit(setMaxMessageSizeEvent, size)
+}
+
+export const setMaxMessageSize = (maxMessageSize: number) => (dispatch: Dispatch<any>) => {
+  dispatch({
+    maxMessageSize,
+    type: ActionTypes.SETTINGS_SET_MAX_MESSAGE_SIZE,
+  })
+  applyMaxMessageSize(maxMessageSize)
+  dispatch(storeSettings())
+}
+
 export const storeSettings = () => async (dispatch: Dispatch<any>, getState: () => AppState) => {
+  const currentSettings = getState().settings.toJS()
   const settings = {
-    ...getState().settings.toJS(),
+    ...currentSettings,
     autoExpandLimit: undefined,
     topicFilter: undefined,
     visible: undefined,
+    // "Unlimited" only lasts for the session, so a broker with huge retained payloads cannot make the next start unusable
+    maxMessageSize:
+      currentSettings.maxMessageSize === MAX_MESSAGE_SIZE_UNLIMITED
+        ? MAX_MESSAGE_SIZE_DEFAULT
+        : currentSettings.maxMessageSize,
   }
 
   try {

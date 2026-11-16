@@ -8,12 +8,15 @@ import {
   makeConnectionStateEvent,
   makePublishEvent,
   removeConnection,
+  setMaxMessageSize,
 } from '../../events'
 import { EventBusInterface } from '../../events/EventSystem/EventBusInterface'
+import { MAX_MESSAGE_SIZE_DEFAULT, isValidMaxMessageSize, truncatePayload } from '../../events/MessageSizeLimit'
 
 export class ConnectionManager {
   private connections: { [s: string]: DataSource<any> } = {}
   private backendEvents: EventBusInterface
+  private maxMessageSize = MAX_MESSAGE_SIZE_DEFAULT
 
   constructor(backendEvents: EventBusInterface) {
     this.backendEvents = backendEvents
@@ -46,13 +49,7 @@ export class ConnectionManager {
   private handleNewMessagesForConnection(connectionId: string, connection: MqttSource) {
     const messageEvent = makeConnectionMessageEvent(connectionId)
     connection.onMessage((topic: string, payload: Buffer, packet: any) => {
-      let buffer = payload
-      if (buffer.length > 20000) {
-        buffer = buffer.slice(0, 20000)
-      }
-
-      let decoded_payload = null
-      decoded_payload = Base64Message.fromBuffer(buffer)
+      const decoded_payload = Base64Message.fromBuffer(truncatePayload(payload, this.maxMessageSize))
 
       this.backendEvents.emit(messageEvent, {
         topic,
@@ -68,6 +65,11 @@ export class ConnectionManager {
     this.backendEvents.subscribe(addMqttConnectionEvent, this.handleConnectionRequest)
     this.backendEvents.subscribe(removeConnection, (connectionId: string) => {
       this.removeConnection(connectionId)
+    })
+    this.backendEvents.subscribe(setMaxMessageSize, (maxMessageSize: number) => {
+      if (isValidMaxMessageSize(maxMessageSize)) {
+        this.maxMessageSize = maxMessageSize
+      }
     })
   }
 

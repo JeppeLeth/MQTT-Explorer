@@ -62,3 +62,8 @@ export const writeToFile: RpcEvent<{ filePath: string; data: string; encoding?: 
 export const readFromFile: RpcEvent<{ filePath: string; encoding?: string }, Buffer> = {
   topic: 'readFromFile',
 }
+
+/** Maximum payload size forwarded by the backend, see MessageSizeLimit.ts */
+export const setMaxMessageSize: Event<number> = {
+  topic: 'settings/maxMessageSize',
+}

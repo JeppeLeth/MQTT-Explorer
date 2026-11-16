@@ -5,9 +5,12 @@ import { EventDispatcher } from '../../../events'
 export type TopicDataType = 'string' | 'json' | 'hex'
 
 export class TreeNode<ViewModel extends Destroyable> {
+  /** Per-topic history budget in bytes for newly created nodes, follows the max message size setting */
+  public static messageHistoryCapacity = 20000
+
   public sourceEdge?: Edge<ViewModel>
   public message?: Message
-  public messageHistory: MessageHistory = new RingBuffer<Message>(20000, 100)
+  public messageHistory: MessageHistory = new RingBuffer<Message>(TreeNode.messageHistoryCapacity, 100)
   public viewModel?: ViewModel
   public edges: { [s: string]: Edge<ViewModel> } = {}
   public edgeArray: Array<Edge<ViewModel>> = []

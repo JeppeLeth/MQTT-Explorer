@@ -24,6 +24,11 @@ import TimeLocale from './TimeLocale'
 import { AppState } from '../../reducers'
 import { globalActions, settingsActions, connectionActions } from '../../actions'
 import { TopicOrder } from '../../reducers/Settings'
+import {
+  MAX_MESSAGE_SIZE_OPTIONS,
+  MAX_MESSAGE_SIZE_UNLIMITED,
+  formatMessageSize,
+} from '../../../../events/MessageSizeLimit'
 import { isBrowserMode } from '../../utils/browserMode'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -109,6 +114,7 @@ interface Props {
   topicOrder: TopicOrder
   visible: boolean
   theme: 'light' | 'dark'
+  maxMessageSize: number
 }
 
 class Settings extends React.PureComponent<Props, {}> {
@@ -225,6 +231,44 @@ class Settings extends React.PureComponent<Props, {}> {
     this.props.actions.settings.setTopicOrder(e.target.value as TopicOrder)
   }
 
+  private renderMaxMessageSize() {
+    const { classes, maxMessageSize } = this.props
+
+    return (
+      <Tooltip
+        placement="left"
+        title="Payloads larger than this are truncated. Larger limits use more memory. Unlimited is reset to the default on restart."
+      >
+        <div style={{ padding: '8px', display: 'flex' }}>
+          <InputLabel htmlFor="max-message-size" style={{ flex: '1', marginTop: '8px' }}>
+            Max Message Size
+          </InputLabel>
+          <Select
+            value={maxMessageSize}
+            onChange={this.onChangeMaxMessageSize}
+            input={<Input name="max-message-size" id="max-message-size" />}
+            name="max-message-size"
+            className={classes.input}
+            style={{ flex: '1' }}
+            data-testid="max-message-size-select"
+          >
+            {MAX_MESSAGE_SIZE_OPTIONS.map(size => (
+              <MenuItem key={size} value={size}>
+                {size === MAX_MESSAGE_SIZE_UNLIMITED
+                  ? `${formatMessageSize(size)} (this session)`
+                  : formatMessageSize(size)}
+              </MenuItem>
+            ))}
+          </Select>
+        </div>
+      </Tooltip>
+    )
+  }
+
+  private onChangeMaxMessageSize = (e: SelectChangeEvent<number>) => {
+    this.props.actions.settings.setMaxMessageSize(Number(e.target.value))
+  }
+
   public render() {
     const { classes, actions, visible } = this.props
     return (
@@ -243,6 +287,7 @@ class Settings extends React.PureComponent<Props, {}> {
           {this.renderAutoExpand()}
           {this.renderNodeOrder()}
           <TimeLocale />
+          {this.renderMaxMessageSize()}
           {this.renderHighlightTopicUpdates()}
           {this.selectTopicsOnMouseOver()}
           {this.toggleTheme()}
@@ -311,6 +356,7 @@ const mapStateToProps = (state: AppState) => ({
   highlightTopicUpdates: state.settings.get('highlightTopicUpdates'),
   selectTopicWithMouseOver: state.settings.get('selectTopicWithMouseOver'),
   theme: state.settings.get('theme'),
+  maxMessageSize: state.settings.get('maxMessageSize'),
 })
 
 const mapDispatchToProps = (dispatch: any) => ({

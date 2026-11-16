@@ -23,6 +23,8 @@ import AIAssistant from './AIAssistant'
 
 interface Props {
   node?: q.TreeNode<any>
+  /** Changes whenever the node receives a message, so this connected component re-renders */
+  lastUpdate?: number
   classes: any
   compareMessage?: q.Message
   connectionId?: string

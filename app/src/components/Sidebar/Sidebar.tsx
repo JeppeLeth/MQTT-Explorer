@@ -24,7 +24,12 @@ interface Props {
   connectionId?: string
 }
 
-function useUpdateNodeWhenNodeReceivesUpdates(node?: q.TreeNode<any>) {
+/**
+ * Re-renders when the node receives messages and returns the node's last update time.
+ * Pass it on to connected children: they are pure and would not re-render otherwise, since the node object itself
+ * does not change.
+ */
+function useUpdateNodeWhenNodeReceivesUpdates(node?: q.TreeNode<any>): number {
   const [, setLastUpdate] = useState(0)
   const updateNode = useCallback(
     throttle(() => {
@@ -43,12 +48,14 @@ function useUpdateNodeWhenNodeReceivesUpdates(node?: q.TreeNode<any>) {
       node && node.onMessage.unsubscribe(updateCallback)
     }
   }, [node])
+
+  return node ? node.lastUpdate : 0
 }
 
 function SidebarNew(props: Props) {
   const { classes, tree, nodePath } = props
   const node = usePollingToFetchTreeNode(tree, nodePath || '')
-  useUpdateNodeWhenNodeReceivesUpdates(node)
+  const lastUpdate = useUpdateNodeWhenNodeReceivesUpdates(node)
   const [tabValue, setTabValue] = useState(0)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -63,7 +70,7 @@ function SidebarNew(props: Props) {
     return (
       <div id="Sidebar" className={classes.root}>
         <Box className={classes.mobileContent}>
-          <DetailsTab node={node} connectionId={props.connectionId} />
+          <DetailsTab node={node} lastUpdate={lastUpdate} connectionId={props.connectionId} />
         </Box>
       </div>
     )
@@ -88,7 +95,7 @@ function SidebarNew(props: Props) {
 
       <Box className={classes.tabContent}>
         <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
-          <DetailsTab node={node} connectionId={props.connectionId} />
+          <DetailsTab node={node} lastUpdate={lastUpdate} connectionId={props.connectionId} />
         </Box>
         <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
           <PublishTab connectionId={props.connectionId} />

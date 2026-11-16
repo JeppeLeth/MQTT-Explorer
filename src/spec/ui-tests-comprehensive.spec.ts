@@ -4,7 +4,7 @@ import { ElectronApplication, Page, _electron as electron } from 'playwright'
 import type { MqttClient } from 'mqtt'
 import { createTestMock, stopTestMock } from './mock-mqtt-test'
 import { default as MockSparkplug } from './mock-sparkplugb'
-import { sleep, expandTopic } from './util'
+import { sleep, expandTopic, isolatedUserDataDirArg } from './util'
 import { connectTo } from './scenarios/connect'
 import { searchTree, clearSearch } from './scenarios/searchTree'
 import { showNumericPlot } from './scenarios/showNumericPlot'
@@ -117,7 +117,13 @@ describe('MQTT Explorer Comprehensive UI Tests', function () {
 
     console.log('Launching Electron application...')
     electronApp = await electron.launch({
-      args: [`${__dirname}/../../..`, '--runningUiTestOnCi', '--no-sandbox', '--disable-dev-shm-usage'],
+      args: [
+        `${__dirname}/../../..`,
+        '--runningUiTestOnCi',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        isolatedUserDataDirArg(),
+      ],
       timeout: 60000,
     })
 

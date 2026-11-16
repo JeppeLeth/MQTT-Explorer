@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { ElectronApplication, Page, _electron as electron } from 'playwright'
 import type { MqttClient } from 'mqtt'
 import { createTestMock, stopTestMock } from './mock-mqtt-test'
-import { sleep } from './util'
+import { sleep, isolatedUserDataDirArg } from './util'
 import { connectTo } from './scenarios/connect'
 import { expandTopic } from './util/expandTopic'
 
@@ -46,7 +46,13 @@ describe('expandTopic UI Helper - Isolated Test', function () {
 
     console.log('Launching Electron application...')
     electronApp = await electron.launch({
-      args: [`${__dirname}/../../..`, '--runningUiTestOnCi', '--no-sandbox', '--disable-dev-shm-usage'],
+      args: [
+        `${__dirname}/../../..`,
+        '--runningUiTestOnCi',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        isolatedUserDataDirArg(),
+      ],
       timeout: 60000,
     })
 

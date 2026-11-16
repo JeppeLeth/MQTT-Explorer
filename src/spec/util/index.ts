@@ -1,9 +1,20 @@
 import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 
 import { Page, Locator } from 'playwright'
 
 export { expandTopic } from './expandTopic'
 export { selectTopic } from './selectTopic'
+
+/**
+ * Command line switch that points Electron at a fresh, temporary profile directory,
+ * so UI tests never read or overwrite the developer's real settings and connections.
+ */
+export function isolatedUserDataDirArg(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mqtt-explorer-ui-test-'))
+  return `--user-data-dir=${dir}`
+}
 
 let fast = false
 export function setFast() {

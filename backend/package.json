@@ -4,10 +4,10 @@
   "description": "",
   "main": "build/index.js",
   "scripts": {
-    "test": "NODE_PATH=../node_modules mocha --require tsx --require source-map-support/register --recursive ./src/*/**/*.spec.ts",
+    "test": "NODE_PATH=../node_modules ../node_modules/.bin/mocha --require tsx --require source-map-support/register --recursive './src/**/*.spec.ts'",
     "build": "tsc",
-    "test-inspect": "NODE_PATH=../node_modules mocha --inspect-brk --require tsx --require source-map-support/register --recursive ./src/*/**/*.spec.ts",
-    "coverage": "NODE_PATH=../node_modules c8 mocha --require tsx --require source-map-support/register --recursive ./src/*/**/*.spec.ts",
+    "test-inspect": "NODE_PATH=../node_modules ../node_modules/.bin/mocha --inspect-brk --require tsx --require source-map-support/register --recursive './src/**/*.spec.ts'",
+    "coverage": "NODE_PATH=../node_modules c8 mocha --require tsx --require source-map-support/register --recursive './src/**/*.spec.ts'",
     "debug": "tsx --inspect ./src/index.ts"
   },
   "engines": {

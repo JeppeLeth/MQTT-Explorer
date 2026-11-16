@@ -98,18 +98,9 @@ class TreeComponent extends React.PureComponent<Props, State> {
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', this.handleResize)
     }
-  }
-
-  public componentWillReceiveProps(nextProps: Props) {
-    if (this.props.tree !== nextProps.tree) {
-      if (this.props.tree) {
-        this.props.tree.didUpdate.unsubscribe(this.throttledTreeUpdate)
-      }
-      if (nextProps.tree) {
-        nextProps.tree.didUpdate.subscribe(this.throttledTreeUpdate)
-      }
-      this.setState(this.state)
-    }
+    // Subscribe to the tree we were mounted with. Before, the subscription only happened when the tree prop changed,
+    // so a remounted tree (e.g. after switching between desktop and mobile layout) stopped updating.
+    this.props.tree && this.props.tree.didUpdate.subscribe(this.throttledTreeUpdate)
   }
 
   public componentWillUnmount() {
@@ -159,15 +150,17 @@ class TreeComponent extends React.PureComponent<Props, State> {
     )
   }
 
-  public componentWillUpdate() {
-    this.perf = performance.now()
-  }
-
-  public componentDidUpdate() {
+  public componentDidUpdate(prevProps: Props) {
+    if (prevProps.tree !== this.props.tree) {
+      prevProps.tree && prevProps.tree.didUpdate.unsubscribe(this.throttledTreeUpdate)
+      this.props.tree && this.props.tree.didUpdate.subscribe(this.throttledTreeUpdate)
+    }
     this.performanceCallback(performance.now() - this.perf)
   }
 
   public render() {
+    // Start of the render that componentDidUpdate measures for the update throttling
+    this.perf = performance.now()
     const { tree } = this.props
     if (!tree) {
       return null

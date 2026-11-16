@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react'
 import * as q from '../../../../backend/src/Model'
 
 /**
- * If a node is not available when the plot is shown, keep polling until it has been created
+ * If a node is not available when the plot is shown, keep polling until it has been created.
+ *
+ * `path` is undefined when there is nothing to look up. Note that '' is a valid path: it is the topic level with an
+ * empty name (topics starting with '/'), not "no topic".
  */
-export function usePollingToFetchTreeNode(tree: q.Tree<any> | undefined, path: string) {
+export function usePollingToFetchTreeNode(tree: q.Tree<any> | undefined, path: string | undefined) {
   const [treeNode, setTreeNode] = useState<q.TreeNode<any> | undefined>()
   useEffect(() => {
     // If treeNode has been destroyed set treeNode to undefined
@@ -19,7 +22,10 @@ export function usePollingToFetchTreeNode(tree: q.Tree<any> | undefined, path: s
   }, [treeNode])
 
   function pollUntilTreeNodeHasBeenFound() {
-    if (!tree) {
+    if (!tree || path === undefined) {
+      if (treeNode) {
+        setTreeNode(undefined)
+      }
       return
     }
 
@@ -45,5 +51,5 @@ export function usePollingToFetchTreeNode(tree: q.Tree<any> | undefined, path: s
   }
 
   useEffect(pollUntilTreeNodeHasBeenFound, [tree, treeNode, path])
-  return treeNode
+  return path === undefined ? undefined : treeNode
 }

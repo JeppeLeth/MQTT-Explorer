@@ -54,7 +54,7 @@ function useUpdateNodeWhenNodeReceivesUpdates(node?: q.TreeNode<any>): number {
 
 function SidebarNew(props: Props) {
   const { classes, tree, nodePath } = props
-  const node = usePollingToFetchTreeNode(tree, nodePath || '')
+  const node = usePollingToFetchTreeNode(tree, nodePath)
   const lastUpdate = useUpdateNodeWhenNodeReceivesUpdates(node)
   const [tabValue, setTabValue] = useState(0)
   const theme = useTheme()

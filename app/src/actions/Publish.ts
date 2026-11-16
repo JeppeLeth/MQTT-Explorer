@@ -6,6 +6,7 @@ import { Action, ActionTypes } from '../reducers/Publish'
 import { AppState } from '../reducers'
 import { MqttMessage, makePublishEvent, rendererEvents, rendererRpc, readFromFile } from '../eventBus'
 import { showError } from './Global'
+import { toUint8Array, uint8ArrayToString } from '../utils/binaryData'
 
 export const setTopic = (topic?: string): Action => ({
   topic,
@@ -49,8 +50,9 @@ async function getFileContent(encoding: BufferEncoding): Promise<FileParameters 
     throw rejectReasons.noFileSelected
   }
   try {
-    const data = await rendererRpc.call(readFromFile, { filePath: selectedFile, encoding })
-    return { name: selectedFile, data: data.toString(encoding) }
+    // The RPC result arrives as Uint8Array in Electron, see toUint8Array
+    const data = toUint8Array(await rendererRpc.call(readFromFile, { filePath: selectedFile, encoding }))
+    return { name: selectedFile, data: uint8ArrayToString(data, encoding) }
   } catch (error) {
     throw rejectReasons.errorReadingFile
   }

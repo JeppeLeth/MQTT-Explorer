@@ -15,6 +15,7 @@ import { showError } from './Global'
 import { ActionTypes, Action } from '../reducers/ConnectionManager'
 import { connectionsMigrator } from './migrations/Connection'
 import { rendererRpc, readFromFile } from '../eventBus'
+import { repairCorruptedCertificateData, toUint8Array, uint8ArrayToBase64 } from '../utils/binaryData'
 
 export interface ConnectionDictionary {
   [s: string]: ConnectionOptions
@@ -33,6 +34,14 @@ export const loadConnectionSettings = () => async (dispatch: Dispatch<any>, getS
     if (connections && connectionsMigrator.isMigrationNecessary(connections)) {
       connections = connectionsMigrator.applyMigrations(connections)
       await persistentStorage.store(storedConnectionsIdentifier, connections)
+    }
+
+    if (connections) {
+      const repaired = repairCorruptedCertificates(connections)
+      if (repaired !== connections) {
+        connections = repaired
+        await persistentStorage.store(storedConnectionsIdentifier, connections)
+      }
     }
   } catch (error) {
     dispatch(showError(error))
@@ -83,15 +92,36 @@ async function openCertificate(): Promise<CertificateParameters> {
     throw rejectReasons.noCertificateSelected
   }
 
-  const data = await rendererRpc.call(readFromFile, { filePath: selectedFile })
+  // The RPC result arrives as Uint8Array in Electron, see toUint8Array
+  const data = toUint8Array(await rendererRpc.call(readFromFile, { filePath: selectedFile }))
   if (data.length > 16_384 || data.length < 64) {
     throw rejectReasons.certificateSizeDoesNotMatch
   }
 
   return {
-    data: data.toString('base64'),
+    data: uint8ArrayToBase64(data),
     name: path.basename(selectedFile),
   }
+}
+
+const certificateTypes: Array<CertificateTypes> = ['selfSignedCertificate', 'clientCertificate', 'clientKey']
+
+/**
+ * Repairs certificates that earlier versions stored as comma separated bytes instead of base64.
+ * Returns the same object if nothing had to be repaired.
+ */
+export function repairCorruptedCertificates(connections: ConnectionDictionary): ConnectionDictionary {
+  let result = connections
+  Object.entries(connections).forEach(([id, connection]) => {
+    certificateTypes.forEach(type => {
+      const certificate = connection[type]
+      const repairedData = repairCorruptedCertificateData(certificate?.data)
+      if (certificate && repairedData) {
+        result = { ...result, [id]: { ...result[id], [type]: { ...certificate, data: repairedData } } }
+      }
+    })
+  })
+  return result
 }
 
 export const saveConnectionSettings = () => async (dispatch: Dispatch<any>, getState: () => AppState) => {

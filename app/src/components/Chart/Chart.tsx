@@ -14,6 +14,9 @@ import { useCustomYDomain } from './effects/useCustomYDomain'
 
 const abbreviate = require('number-abbreviate')
 
+const MIN_CHART_WIDTH = 120
+const MIN_TIME_TICK_SPACING_PX = 90
+
 export interface Props {
   data: Array<{ x: number; y: number }>
   interpolation?: PlotCurveTypes
@@ -29,6 +32,10 @@ export default memo((props: Props) => {
   const [tooltip, setTooltip] = React.useState<Tooltip | undefined>()
   const [hoveredPoint, setHoveredPoint] = React.useState<Point | undefined>()
   const { width = 300, ref } = useResizeDetector()
+  // Never hand visx a width smaller than its margins (negative <rect> widths), and only show as many
+  // time labels as fit next to each other
+  const chartWidth = Math.max(width || 300, MIN_CHART_WIDTH)
+  const timeTicks = Math.max(2, Math.min(4, Math.floor((chartWidth - 60) / MIN_TIME_TICK_SPACING_PX)))
   const chartContainerRef = React.useRef<HTMLDivElement>(null)
 
   // Screen position of the pointer, updated on every move. The tooltip is anchored to a
@@ -117,7 +124,7 @@ export default memo((props: Props) => {
         {data.length === 0 ? <NoData /> : null}
         <div ref={chartContainerRef}>
           <XYChart
-            width={width || 300}
+            width={chartWidth}
             height={CHART_HEIGHT}
             margin={{
               top: 10,
@@ -140,7 +147,7 @@ export default memo((props: Props) => {
             />
             <Axis
               orientation="bottom"
-              numTicks={4}
+              numTicks={timeTicks}
               tickFormat={formatXAxis}
               stroke={theme.palette.text.secondary}
               tickStroke={theme.palette.text.secondary}

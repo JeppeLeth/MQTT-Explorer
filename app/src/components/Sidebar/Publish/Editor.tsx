@@ -35,9 +35,6 @@ function Editor(props: {
       name="UNIQUE_ID_OF_DIV"
       width="100%"
       height="200px"
-      enableSnippets
-      enableBasicAutocompletion
-      enableLiveAutocompletion
       showPrintMargin={false}
       showGutter
       value={props.value}

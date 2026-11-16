@@ -102,14 +102,14 @@ function DetailsTab(props: Props) {
         <SimpleBreadcrumb node={node} />
         <Box className={classes.topicActions}>
           <Copy value={node.path()} />
-          {node.childTopicCount() === 0 && (
+          {node.edgeCount() === 0 && (
             <Tooltip title="Delete this topic">
               <IconButton size="small" onClick={() => deleteTopic(node, false)} className={classes.iconButton}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
-          {node.childTopicCount() > 0 && (
+          {node.edgeCount() > 0 && (
             <Tooltip title="Delete topic and all subtopics">
               <IconButton size="small" onClick={() => deleteTopic(node, true)} className={classes.iconButton}>
                 <DeleteSweepIcon fontSize="small" />

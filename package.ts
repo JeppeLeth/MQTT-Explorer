@@ -138,6 +138,12 @@ async function buildWithOptions(options: builder.CliOptions, buildInfo: BuildInf
 
   const packageJson = JSON.parse(fs.readFileSync(jsonLocation).toString())
 
+  // electron-builder resolves hook modules relative to the working directory and rejects paths outside of the
+  // project directory (here build/clean), so point the hooks at the copies inside the project directory.
+  const projectDir = path.resolve(options.projectDir || '.')
+  setProperty(packageJson, 'build.afterPack', path.join(projectDir, 'dist', 'scripts', 'afterPack.js'))
+  setProperty(packageJson, 'build.afterSign', path.join(projectDir, 'dist', 'scripts', 'notarize.js'))
+
   // AppX must have a different name since the store name is already taken (but not used)
   if (buildInfo.package === 'appx') {
     setProperty(packageJson, 'build.productName', 'MQTT-Explorer')

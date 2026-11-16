@@ -165,7 +165,14 @@ function ContentView(props: Props) {
             <Sidebar connectionId={props.connectionId} />
           </div>
           {/* Publish tab - keep mounted, toggle visibility */}
-          <div style={{ ...sidebarContainerStyle, display: mobileTab === 2 ? 'block' : 'none' }}>
+          <div
+            style={{
+              ...sidebarContainerStyle,
+              padding: '16px', // same as the details tab
+              boxSizing: 'border-box',
+              display: mobileTab === 2 ? 'block' : 'none',
+            }}
+          >
             <PublishTab connectionId={props.connectionId} />
           </div>
           {/* Charts tab - keep mounted, toggle visibility */}

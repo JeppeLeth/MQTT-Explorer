@@ -1,6 +1,7 @@
 # Builds every pushed branch for macOS, Windows and Linux and publishes the packages as a GitHub
 # pre-release. Branch builds are not versioned, so every build is "4.5 alpha" (0.4.5-alpha.*) and the
-# release is named after the branch, the commit and the build time.
+# release is named after the branch, the commit and the build time. Only the newest KEEP_RELEASES
+# builds of each branch are kept, older ones are deleted together with their tags.
 #
 # macOS builds are signed ad-hoc (no Developer ID / notarization), see the release notes for how to open them.
 name: Branch builds
@@ -18,11 +19,17 @@ concurrency:
   group: branch-builds-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Shown as "4.5 alpha"
+  ALPHA_VERSION: 0.4.5
+  KEEP_RELEASES: 3
+
 jobs:
   meta:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.meta.outputs.version }}
+      slug: ${{ steps.meta.outputs.slug }}
       tag: ${{ steps.meta.outputs.tag }}
       title: ${{ steps.meta.outputs.title }}
       built: ${{ steps.meta.outputs.built }}
@@ -36,9 +43,11 @@ jobs:
           built="$(date -u '+%Y-%m-%d %H:%M UTC')"
           slug="$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
           # Semver pre-release; the "g" keeps an all-digit hash from becoming a number with leading zeros
-          echo "version=0.4.5-alpha.${stamp}.g${short_sha}" >> "$GITHUB_OUTPUT"
-          echo "tag=v0.4.5-alpha-${slug}-${stamp}-${short_sha}" >> "$GITHUB_OUTPUT"
-          echo "title=4.5 alpha · ${BRANCH} · ${short_sha} · ${built}" >> "$GITHUB_OUTPUT"
+          echo "version=${ALPHA_VERSION}-alpha.${stamp}.g${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+          # The prune step below relies on this format to find the builds of a branch
+          echo "tag=v${ALPHA_VERSION}-alpha-${slug}-${stamp}-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "title=${ALPHA_VERSION#0.} alpha · ${BRANCH} · ${short_sha} · ${built}" >> "$GITHUB_OUTPUT"
           echo "built=${built}" >> "$GITHUB_OUTPUT"
 
   build:
@@ -57,8 +66,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npm install -g yarn
@@ -68,7 +77,7 @@ jobs:
       - run: yarn package branch
         env:
           BUILD_VERSION: ${{ needs.meta.outputs.version }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.name }}
           path: |
@@ -83,7 +92,7 @@ jobs:
     needs: [meta, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: packages-*
           path: packages
@@ -104,13 +113,13 @@ jobs:
           - **Built:** ${BUILT} · [build log](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
           - **Version:** \`${VERSION}\`
 
-          Unversioned branch build ("4.5 alpha"), not for production use.
+          Unversioned branch build ("${ALPHA_VERSION#0.} alpha"), not for production use. Only the newest ${KEEP_RELEASES} builds of a branch are kept.
 
           | Platform | File |
           |---|---|
           | macOS (Apple Silicon and Intel) | \`*-universal.dmg\` |
           | Windows | \`*Setup*.exe\` (installer) or the other \`.exe\` (portable) |
-          | Linux | \`.AppImage\` or \`.deb\` (x64, arm64, armv7l) |
+          | Linux | \`.AppImage\` or \`.deb\` (x64, arm64) |
 
           **macOS:** the app is signed ad-hoc, not notarized. After copying it to Applications, open it once via
           *System Settings → Privacy & Security → Open Anyway*, or run
@@ -126,3 +135,24 @@ jobs:
             --notes-file notes.md \
             --prerelease \
             --latest=false
+      # Runs only after the new release exists, so a failed build never removes the previous ones
+      - name: Prune old builds of this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.meta.outputs.tag }}
+          SLUG: ${{ needs.meta.outputs.slug }}
+        run: |
+          # Tags of this branch's builds (see the meta job), the slug only contains [a-z0-9-]
+          export PATTERN="^v${ALPHA_VERSION//./[.]}-alpha-${SLUG}-[0-9]{12}-[0-9a-f]{7}$"
+          # Newest first, without the release just created, which always stays
+          older="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq '.[] | select((.tag_name | test($ENV.PATTERN)) and .tag_name != $ENV.TAG) | "\(.created_at) \(.tag_name)"' \
+            | sort -r | cut -d' ' -f2)"
+          echo "Older builds of this branch, newest first:"
+          echo "${older:-(none)}"
+          echo "$older" | tail -n +"$KEEP_RELEASES" | while read -r tag; do
+            [ -n "$tag" ] || continue
+            echo "Deleting $tag"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes \
+              || echo "::warning::Could not delete the old build $tag"
+          done

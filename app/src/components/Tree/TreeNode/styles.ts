@@ -47,6 +47,12 @@ export const styles = (theme: Theme) => {
       lineHeight: isMobile ? '1.3em' : '1em',
       display: 'inline-block' as const,
       whiteSpace: 'nowrap' as const,
+      // Long values end in an ellipsis instead of being cut off at the pane edge
+      maxWidth: '100%',
+      overflow: 'hidden' as const,
+      textOverflow: 'ellipsis' as const,
+      verticalAlign: 'top' as const,
+      boxSizing: 'border-box' as const,
       minHeight: isMobile ? '40px' : '14px', // 44px touch target on mobile (WCAG AA minimum)
       height: 'auto' as const,
       padding: isMobile ? '8px 8px' : '1px 4px 0 4px', // Reduced padding, still touch-friendly

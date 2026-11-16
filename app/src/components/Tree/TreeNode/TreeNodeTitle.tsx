@@ -23,7 +23,16 @@ export function TreeNodeTitle(props: TreeNodeProps) {
 
     return (
       <span key="edge" className={props.classes.sourceEdge} data-test-topic={name}>
-        {name}
+        {name === '' ? (
+          <span
+            className={props.classes.emptyName}
+            title="Empty topic level, e.g. the part before the first '/' in /a/b"
+          >
+            (empty)
+          </span>
+        ) : (
+          name
+        )}
       </span>
     )
   }
@@ -129,6 +138,11 @@ const styles = (theme: Theme) => {
       color: theme.palette.text.secondary,
       userSelect: 'none' as const,
       fontSize: isMobile ? '14px' : 'inherit',
+    },
+    emptyName: {
+      fontStyle: 'italic' as const,
+      fontWeight: 'normal' as const,
+      color: theme.palette.text.secondary,
     },
   }
 }

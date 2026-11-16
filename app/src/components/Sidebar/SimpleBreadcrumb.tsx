@@ -25,7 +25,6 @@ function SimpleBreadcrumb(props: Props) {
     .map(n => n.sourceEdge)
     .filter(edge => Boolean(edge) && edge?.target)
     .map(edge => ({ name: edge?.name || '', target: edge!.target }))
-    .filter(item => item.name !== '')
 
   if (breadcrumbNodes.length === 0) {
     return null
@@ -43,7 +42,7 @@ function SimpleBreadcrumb(props: Props) {
             onClick={() => actions.selectTopic(item.target)}
             underline="hover"
           >
-            {item.name}
+            {item.name === '' ? <span className={classes.emptyName}>(empty)</span> : item.name}
           </Link>
         </span>
       ))}
@@ -52,6 +51,11 @@ function SimpleBreadcrumb(props: Props) {
 }
 
 const styles = (theme: Theme) => ({
+  emptyName: {
+    fontStyle: 'italic' as const,
+    fontWeight: 'normal' as const,
+    color: theme.palette.text.secondary,
+  },
   breadcrumbContainer: {
     display: 'flex',
     flexWrap: 'wrap' as const,

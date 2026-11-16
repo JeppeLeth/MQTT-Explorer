@@ -2,16 +2,15 @@ import * as React from 'react'
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon'
 
 /**
- * Outline "0101" glyph, similar to Font Awesome's regular binary icon.
- * Wider than tall so the four digits stay readable beside the Hex label.
+ * "01" glyph drawn on the standard 24x24 Material icon grid with the same 2px stroke weight and a
+ * footprint matching the neighbouring Code / Reorder icons, so it sizes like any other MUI icon.
  */
 export function BinaryIcon(props: SvgIconProps) {
   return (
-    <SvgIcon {...props} viewBox="0 0 70 32" style={{ width: '2em', height: '0.9em', ...props.style }}>
+    <SvgIcon {...props} viewBox="0 0 24 24">
       <path
-        fill="currentColor"
         fillRule="evenodd"
-        d="M8 2A7 7 0 0 0 1 9L1 23A7 7 0 0 0 8 30A7 7 0 0 0 15 23L15 9A7 7 0 0 0 8 2ZM8 5.2A3.8 3.8 0 0 1 11.8 9L11.8 23A3.8 3.8 0 0 1 8 26.8A3.8 3.8 0 0 1 4.2 23L4.2 9A3.8 3.8 0 0 1 8 5.2ZM21 7L25 2H29V26H33V30H19V26H25V8.2ZM44 2A7 7 0 0 0 37 9L37 23A7 7 0 0 0 44 30A7 7 0 0 0 51 23L51 9A7 7 0 0 0 44 2ZM44 5.2A3.8 3.8 0 0 1 47.8 9L47.8 23A3.8 3.8 0 0 1 44 26.8A3.8 3.8 0 0 1 40.2 23L40.2 9A3.8 3.8 0 0 1 44 5.2ZM57 7L61 2H65V26H69V30H55V26H61V8.2Z"
+        d="M6.5 5A3.5 3.5 0 0 0 3 8.5V15.5A3.5 3.5 0 0 0 6.5 19A3.5 3.5 0 0 0 10 15.5V8.5A3.5 3.5 0 0 0 6.5 5ZM6.5 7A1.5 1.5 0 0 1 8 8.5V15.5A1.5 1.5 0 0 1 6.5 17A1.5 1.5 0 0 1 5 15.5V8.5A1.5 1.5 0 0 1 6.5 7ZM16 5H18V17H20.5V19H13.5V17H16V8L14.2 9.4L13 7.9Z"
       />
     </SvgIcon>
   )

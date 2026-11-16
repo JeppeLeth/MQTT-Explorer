@@ -7,10 +7,11 @@ import { setProperty } from 'dot-prop'
 // Only publish to GitHub releases when a token is available (CI). Local builds never publish.
 const publish = process.env.GH_TOKEN ? 'always' : 'never'
 
+// Electron 45 no longer ships 32-bit ARM (armv7l) builds for Linux
 const linuxAppImage: builder.CliOptions = {
   x64: true,
   ia32: false,
-  armv7l: true,
+  armv7l: false,
   arm64: true,
   projectDir: './build/clean',
   publish,
@@ -28,7 +29,7 @@ const linuxSnap: builder.CliOptions = {
 const linuxDeb: builder.CliOptions = {
   x64: true,
   ia32: false,
-  armv7l: true,
+  armv7l: false, // see linuxAppImage
   arm64: true,
   projectDir: './build/clean',
   publish,

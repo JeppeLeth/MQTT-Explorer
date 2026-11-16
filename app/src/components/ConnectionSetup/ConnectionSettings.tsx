@@ -124,6 +124,8 @@ function ConnectionSettings(props: Props) {
             htmlInput: {
               'aria-label': 'MQTT protocol',
             },
+            // The field only shows the scheme, the menu items keep their description
+            select: { renderValue: value => `${value}://` },
           }}
         >
           {protocolItems}
@@ -203,7 +205,7 @@ function ConnectionSettings(props: Props) {
           <Grid size={3}>
             <ToggleSwitch label="Encryption (tls)" classes={classes} value={connection.encryption} toggle={toggleTls} />
           </Grid>
-          <Grid size={2}>{renderProtocols()}</Grid>
+          <Grid size={3}>{renderProtocols()}</Grid>
           <Grid size={7}>
             <TextField
               label="Host"
@@ -220,7 +222,7 @@ function ConnectionSettings(props: Props) {
               }}
             />
           </Grid>
-          <Grid size={3}>
+          <Grid size={2}>
             <TextField
               label="Port"
               className={classes.textField}

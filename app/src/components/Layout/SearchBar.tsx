@@ -70,7 +70,7 @@ function SearchBar(props: {
         <Search />
       </div>
       <InputBase
-        value={topicFilter}
+        value={topicFilter ?? ''}
         inputProps={{
           onFocus,
           onBlur,

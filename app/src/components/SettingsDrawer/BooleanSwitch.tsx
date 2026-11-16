@@ -30,6 +30,7 @@ function BooleanSwitch(props: {
       <Tooltip title={tooltip}>
         <Switch
           name={`toggle-${sha1(title)}`}
+          slotProps={{ input: { id: `toggle-${sha1(title)}`, 'aria-label': title } }}
           checked={value}
           onChange={action}
           color="primary"

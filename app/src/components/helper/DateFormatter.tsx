@@ -18,6 +18,15 @@ const unitMapping = {
   h: 'hours',
 }
 
+/**
+ * The locale's long time format with milliseconds right after the seconds, e.g. "h:mm:ss.SSS A" for en-US.
+ * Appending ".SSS" to "LTS" would put them after the AM/PM marker ("9:52:08 AM.681").
+ */
+export function timeWithMillisecondsFormat(localeData: moment.Locale): string {
+  const longTime = localeData.longDateFormat('LTS')
+  return /ss/.test(longTime) ? longTime.replace(/ss/, 'ss.SSS') : `${longTime}.SSS`
+}
+
 class DateFormatter extends React.PureComponent<Props, {}> {
   private intervalSince(intervalSince: Date) {
     const interval = intervalSince.getTime() - this.props.date.getTime()
@@ -30,9 +39,9 @@ class DateFormatter extends React.PureComponent<Props, {}> {
   }
 
   private localizedDate(locale: string) {
-    return moment(this.props.date)
-      .locale(locale)
-      .format(this.props.timeFirst ? 'LTS.SSS L' : 'L LTS.SSS')
+    const date = moment(this.props.date).locale(locale)
+    const time = timeWithMillisecondsFormat(date.localeData())
+    return date.format(this.props.timeFirst ? `${time} L` : `L ${time}`)
   }
 
   private unitForInterval(milliseconds: number) {

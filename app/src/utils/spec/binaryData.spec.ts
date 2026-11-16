@@ -30,9 +30,9 @@ describe('binaryData', () => {
 
   describe('uint8ArrayToString', () => {
     it('decodes utf8 and base64', () => {
-      const bytes = new Uint8Array(Buffer.from('Grüße 🌡️'))
-      expect(uint8ArrayToString(bytes, 'utf8')).to.eq('Grüße 🌡️')
-      expect(uint8ArrayToString(bytes, 'base64')).to.eq(Buffer.from('Grüße 🌡️').toString('base64'))
+      const bytes = new Uint8Array(Buffer.from('temperature 21 °C ✓'))
+      expect(uint8ArrayToString(bytes, 'utf8')).to.eq('temperature 21 °C ✓')
+      expect(uint8ArrayToString(bytes, 'base64')).to.eq(Buffer.from('temperature 21 °C ✓').toString('base64'))
     })
   })
 

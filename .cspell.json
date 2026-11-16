@@ -79,6 +79,7 @@
     "parseable",
     "sonoff",
     "tele",
-    "codesigning"
+    "codesigning",
+    "Crashpad"
   ]
 }

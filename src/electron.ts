@@ -18,6 +18,7 @@ import {
 } from './development'
 import { shouldAutoUpdate, handleAutoUpdate } from './autoUpdater'
 import { registerCrashReporter } from './registerCrashReporter'
+import { DEFAULT_WINDOW_SIZE, MINIMUM_WINDOW_SIZE, loadWindowState, trackWindowState } from './windowState'
 import { makeOpenDialogRpc, makeSaveDialogRpc } from '../events/OpenDialogRequest'
 import { getAppVersion, writeToFile, readFromFile } from '../events'
 import { backendRpc, backendEvents } from '../events/EventSystem/EventBus'
@@ -93,10 +94,13 @@ async function createWindow() {
   }
 
   const iconPath = path.join(__dirname, '..', '..', 'icon.png')
+  // Reopen with the size and position of the last session (not for UI tests, they run in full screen)
+  const windowState = runningUiTestOnCi() ? undefined : loadWindowState()
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 720,
+    ...(windowState ? windowState.bounds : DEFAULT_WINDOW_SIZE),
+    minWidth: MINIMUM_WINDOW_SIZE.width,
+    minHeight: MINIMUM_WINDOW_SIZE.height,
     show: false,
     webPreferences: {
       ...({ enableRemoteModule: true } as any),
@@ -108,10 +112,16 @@ async function createWindow() {
     icon: iconPath,
   })
 
+  if (!runningUiTestOnCi()) {
+    trackWindowState(mainWindow)
+  }
+
   mainWindow.once('ready-to-show', () => {
     if (mainWindow) {
       runningUiTestOnCi() && mainWindow.setFullScreen(true)
+      windowState?.maximized && mainWindow.maximize()
       mainWindow.show()
+      windowState?.fullScreen && mainWindow.setFullScreen(true)
     }
   })
 

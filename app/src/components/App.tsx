@@ -14,6 +14,7 @@ import { AboutDialog } from './AboutDialog'
 import { AppState } from '../reducers'
 import { ConfirmationRequest } from '../reducers/Global'
 import { globalActions, settingsActions } from '../actions'
+import { describeError } from '../utils/describeError'
 ;(window as any).global = window
 
 const Settings = React.lazy(() => import('./SettingsDrawer/Settings'))
@@ -42,8 +43,11 @@ class App extends React.PureComponent<Props, {}> {
     const message = this.props.error || this.props.notification
     const isError = message === this.props.error
     if (message) {
-      // Guard in case someone ever calls showError with an error instead of a string
-      const str = typeof message === 'string' ? message : JSON.stringify(message)
+      // showError is frequently called with Error objects, which JSON.stringify renders as "{}"
+      const str = describeError(message)
+      if (isError && typeof message !== 'string') {
+        console.error(message)
+      }
       return (
         <Notification
           message={str}

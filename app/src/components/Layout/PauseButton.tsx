@@ -12,7 +12,8 @@ import { AppState } from '../../reducers'
 
 const styles = (theme: Theme) => ({
   icon: {
-    color: theme.palette.primary.contrastText,
+    // Same color as the app bar's text: primary.contrastText is near-black for the dark theme's light primary
+    color: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.primary.contrastText,
     verticalAlign: 'middle' as const,
   },
   bufferStats: {

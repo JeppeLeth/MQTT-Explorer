@@ -20,7 +20,10 @@ function ClearAdornment(props: Props) {
     return null
   }
 
-  const color = props.variant === 'primary' ? theme.palette.primary.contrastText : undefined
+  // The primary variant sits in the app bar, use its text color (primary.contrastText is near-black in dark mode)
+  const appBarTextColor =
+    theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.primary.contrastText
+  const color = props.variant === 'primary' ? appBarTextColor : undefined
   return (
     <IconButton style={{ ...props.style, padding: '1px' }} onClick={props.action}>
       <Clear style={{ color, fontSize: '16px' }} />

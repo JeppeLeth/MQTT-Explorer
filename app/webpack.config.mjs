@@ -19,6 +19,8 @@ export default {
     filename: isDevelopment ? '[name].bundle.js' : '[name].[contenthash:8].bundle.js',
     path: `${__dirname}/build`,
     pathinfo: false,
+    // Remove chunks of previous builds, otherwise they pile up and get packaged into the app
+    clean: true,
   },
   optimization: {
     minimize: !isDevelopment,

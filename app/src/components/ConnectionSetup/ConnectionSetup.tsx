@@ -96,6 +96,8 @@ class ConnectionSetup extends React.PureComponent<Props, {}> {
 }
 
 const connectionHeight = '440px'
+// Centered for the usual height, but never above the top of the window
+const connectionMarginTop = `max(16px, calc((100vh - ${connectionHeight}) / 2))`
 const styles = (theme: Theme) => ({
   title: {
     color: theme.palette.text.primary,
@@ -116,10 +118,12 @@ const styles = (theme: Theme) => ({
     },
   },
   root: {
-    margin: `calc((100vh - ${connectionHeight}) / 2) auto 0 auto`,
+    margin: `${connectionMarginTop} auto 0 auto`,
     minWidth: '800px',
     maxWidth: '850px',
-    height: connectionHeight,
+    // Grows with its content (e.g. the advanced settings), but scrolls instead of leaving the window
+    minHeight: `min(${connectionHeight}, calc(100vh - ${connectionMarginTop} - 16px))`,
+    maxHeight: `calc(100vh - ${connectionMarginTop} - 16px)`,
     outline: 'none' as const,
     display: 'flex' as const,
     // Mobile responsive adjustments
@@ -150,10 +154,9 @@ const styles = (theme: Theme) => ({
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(2),
     flex: 10,
-    // Mobile: enable scrolling
+    overflowY: 'auto' as const,
     [theme.breakpoints.down('md')]: {
       borderRadius: `${theme.shape.borderRadius}px`,
-      overflowY: 'auto' as const,
     },
   },
   connectionUri: {

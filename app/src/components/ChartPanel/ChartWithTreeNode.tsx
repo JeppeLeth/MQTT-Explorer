@@ -11,10 +11,11 @@ interface Props {
 
 export function ChartWithTreeNode(props: Props) {
   const { tree, parameters } = props
+  // Hooks must run on every render, also while there is no tree (e.g. before connecting)
+  const treeNode = usePollingToFetchTreeNode(tree, parameters.topic)
   if (!tree) {
     return null
   }
 
-  const treeNode = usePollingToFetchTreeNode(tree, parameters.topic)
   return <TopicChart treeNode={treeNode} parameters={parameters} />
 }

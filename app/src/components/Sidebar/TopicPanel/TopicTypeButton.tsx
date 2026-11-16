@@ -13,10 +13,6 @@ import { MessageDecoder, decoders } from '../../../decoders'
 
 export function TopicTypeButton(props: { node?: q.TreeNode<any> }) {
   const { node } = props
-  if (!node || !node.message || !node.message.payload) {
-    return null
-  }
-
   const options = decoders.flatMap(decoder => decoder.formats.map(format => [decoder, format] as const))
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
@@ -52,6 +48,11 @@ export function TopicTypeButton(props: { node?: q.TreeNode<any> }) {
     }
     setOpen(false)
   }, [])
+
+  // After the hooks, which must run on every render
+  if (!node || !node.message || !node.message.payload) {
+    return null
+  }
 
   return (
     <Button onClick={handleToggle}>

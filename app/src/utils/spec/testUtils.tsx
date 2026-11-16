@@ -16,6 +16,7 @@ import { configureStore } from '@reduxjs/toolkit'
 
 // Setup JSDOM environment for tests
 import 'jsdom-global/register'
+import { atob as nodeAtob, btoa as nodeBtoa } from 'buffer'
 
 // Setup global mocks
 exposeMissingJsdomGlobals()
@@ -23,7 +24,8 @@ mockResizeObserver()
 
 /**
  * jsdom-global only copies a fixed (old) list of window properties onto `global`.
- * Newer libraries (e.g. MUI's FocusTrap) reference globals that are missing from that list.
+ * Newer libraries (e.g. MUI's FocusTrap) reference globals that are missing from that list,
+ * and some of the copied ones do not work with current jsdom versions.
  */
 function exposeMissingJsdomGlobals() {
   const keys = ['ShadowRoot'] as const
@@ -31,6 +33,15 @@ function exposeMissingJsdomGlobals() {
     if (typeof (global as any)[key] === 'undefined' && typeof window !== 'undefined') {
       ;(global as any)[key] = (window as any)[key]
     }
+  }
+
+  // jsdom's window.btoa/atob delegate to the global functions, which jsdom-global replaced with
+  // window.btoa/atob themselves. The resulting infinite recursion surfaces as "invalid characters".
+  ;(global as any).btoa = nodeBtoa
+  ;(global as any).atob = nodeAtob
+  if (typeof window !== 'undefined') {
+    ;(window as any).btoa = nodeBtoa
+    ;(window as any).atob = nodeAtob
   }
 }
 

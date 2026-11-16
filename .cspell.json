@@ -80,6 +80,7 @@
     "sonoff",
     "tele",
     "codesigning",
-    "Crashpad"
+    "Crashpad",
+    "unmaximize"
   ]
 }
